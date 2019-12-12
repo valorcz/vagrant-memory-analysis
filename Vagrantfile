@@ -60,29 +60,6 @@ Vagrant.configure("2") do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
-  config.vm.provision "shell", privileged: false, inline: <<-SHELL
-     sudo yum install -y epel-release 
-     sudo rpm -Uvh http://repository.it4i.cz/mirrors/repoforge/redhat/el7/en/x86_64/rpmforge/RPMS/rpmforge-release-0.5.3-1.el7.rf.x86_64.rpm
-     sudo yum updateinfo
-
-     sudo yum install -y vim wget python-pip gcc gcc-c++ python-devel readline-devel patch capstone git python3 python3-devel python-virtualenv radare2
-     sudo yum remove -y PyYAML
-     sudo pip install powerline-status distorm3
-     sudo yum install -y bash-completion bash-completion-extras
-     sudo yum install -y python2-volatility foremost unzip
-     cat /vagrant/bashrc >> ~/.bashrc
-
-     virtualenv ~/.venv/ --python python3
-     source ~/.venv/bin/activate
-     pip install --upgrade pip setuptools pyasn1 pyyaml wheel
-     pip install future==0.16.0 pyaff4==0.26.post6
-     pip install rekall rekall-agent
-     deactivate
-
-     mkdir ~/bin/
-     mkdir ~/images/
-
-     ln -s ~/.venv/bin/rekal ~/bin/rekal
-  SHELL
+  config.vm.provision "shell", privileged: false, path: "provision/provision.sh"
 end
 
