@@ -10,7 +10,7 @@ sudo yum install -y vim wget python-pip gcc gcc-c++ python-devel readline-devel 
 sudo yum remove -y PyYAML
 sudo pip install powerline-status distorm3
 sudo yum install -y bash-completion bash-completion-extras
-sudo yum install -y python2-volatility foremost unzip yara yara-dev python2-yara python3-yara
+sudo yum install -y python2-volatility foremost unzip yara yara-dev python2-yara 
 sudo yum install -y git
 
 # Prepare the VirtualEnv for Google Rekall. This allows us to use the latest available/functional version,
@@ -18,7 +18,7 @@ sudo yum install -y git
 virtualenv ~/.venv/ --python python3
 source ~/.venv/bin/activate
 ln -s /usr/lib/libyara.so /home/vagrant/.venv/lib/libyara.so
-pip install --upgrade pip setuptools pyasn1 pyyaml wheel yara
+pip install --upgrade pip setuptools pyasn1 pyyaml wheel yara-python
 pip install future==0.16.0 pyaff4==0.26.post6
 pip install rekall rekall-agent
 deactivate
