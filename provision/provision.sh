@@ -2,7 +2,7 @@
 
 # Update the RPM repositories first, so that we have more packages available
 sudo yum install -y epel-release
-sudo rpm -Uvh http://repository.it4i.cz/mirrors/repoforge/redhat/el7/en/x86_64/rpmforge/RPMS/rpmforge-release-0.5. 3-1.el7.rf.x86_64.rpm
+sudo rpm -Uvh http://repository.it4i.cz/mirrors/repoforge/redhat/el7/en/x86_64/rpmforge/RPMS/rpmforge-release-0.5.3-1.el7.rf.x86_64.rpm
 sudo yum updateinfo
 
 # Install the things that are available as packages, and remove things that will be replaced by PIP
