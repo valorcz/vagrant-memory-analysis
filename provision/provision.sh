@@ -16,12 +16,19 @@ sudo yum install -y git
 # Prepare the VirtualEnv for Google Rekall. This allows us to use the latest available/functional version,
 # and to use Python3
 virtualenv ~/.venv/ --python python3
-source ~/.venv/bin/activate
-ln -s /usr/lib/libyara.so /home/vagrant/.venv/lib/libyara.so
-pip install --upgrade pip setuptools pyasn1 pyyaml wheel yara-python
-pip install future==0.16.0 pyaff4==0.26.post6
-pip install rekall rekall-agent
-deactivate
+(
+  source ~/.venv/bin/activate
+  ln -s /usr/lib/libyara.so /home/vagrant/.venv/lib/libyara.so
+  pip install --upgrade pip setuptools pyasn1 pyyaml wheel yara-python
+  pip install future==0.16.0 pyaff4==0.26.post6
+  pip install rekall rekall-agent
+
+  git clone https://github.com/volatilityfoundation/volatility3 .volatility3
+  cd .volatility3
+  python setup.py build
+  python setup.py install
+  deactivate
+)
 
 # Prepare some further folder structure for our work
 mkdir ~/bin/
@@ -37,5 +44,6 @@ mkdir ~/yara/
 
 # Final touches
 ln -s ~/.venv/bin/rekal ~/bin/rekal
+ln -s ~/.venv/bin/vol ~/bin/vol3
 cat /vagrant/bashrc >> ~/.bashrc
 
