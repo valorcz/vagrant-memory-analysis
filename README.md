@@ -20,7 +20,7 @@ with `git`, it's a preferred way), or download
 git clone git@github.com:valorcz/vagrant-memory-analysis.git
 ```
 
-## Running the Image
+## Building the Image
 
 As always, it's very straightforward with Vagrant. Switch to the command-line,
 get to the folder where you downloaded (and unpacked, if necessary) the
@@ -34,6 +34,10 @@ It will do the magic. Be patient, the budilding process may take some time,
 depending on your laptop/workstation performance and network bandwith. Also,
 there may be a few warnings around the built process, but they are generally
 ok and not affecting the functionality of the resulting VM.
+
+[![asciicast](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN.svg)](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN)
+
+## Logging to the VM
 
 When the build of the VM is finished, you can logon to the built VM with
 
@@ -89,12 +93,5 @@ exercise 1
 
 and you should start seeing something like this:
 
-```
- ns-memory-analysis  vagrant  ~  exercise 1
-Downloading exercise01 image: xp-infected.vmem...
-######################################################################## 100.0%
-Extracting the image...
-  /home/vagrant/images/exercise01/xp-infected.vmem.bz2: done
- ns-memory-analysis  vagrant  ~  images  exercise01  
-```
+[![asciicast](https://asciinema.org/a/oxP3X8ZkwSIYyZ1nuevrw9YyS.svg)](https://asciinema.org/a/oxP3X8ZkwSIYyZ1nuevrw9YyS)
 
