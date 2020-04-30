@@ -17,7 +17,7 @@ with `git`, it's a preferred way), or download
 [its ZIP archive](https://github.com/valorcz/vagrant-memory-analysis/archive/master.zip).
 
 ```bash
-git clone git@github.com:valorcz/vagrant-memory-analysis.git
+git clone https://github.com/valorcz/vagrant-memory-analysis.git
 ```
 
 ## Building the Image
