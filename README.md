@@ -35,7 +35,14 @@ depending on your laptop/workstation performance and network bandwith. Also,
 there may be a few warnings around the built process, but they are generally
 ok and not affecting the functionality of the resulting VM.
 
-[![asciicast](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN.svg)](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN)
+[![asciicast](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN.png)](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN)
+
+### Without VirtualBox
+
+If you don't like VirtualBox or cannot use it for any reason, my recommendation is
+to get a VM image of CentOS 7 somewhere and when you get there, you can re-use the 
+`provision/provision.sh` script from my repository. In theory, it should prepare
+the working environment too.
 
 ## Logging to the VM
 
@@ -45,12 +52,8 @@ When the build of the VM is finished, you can logon to the built VM with
 vagrant ssh
 ```
 
-### Without VirtualBox
-
-If you don't like VirtualBox or cannot use it for any reason, my recommendation is
-to get a VM image of CentOS 7 somewhere and when you get there, you can re-use the 
-`provision/provision.sh` script from my repository. In theory, it should prepare
-the working environment too.
+and that's it! Now you are working in a well-prepared forensic environment,
+with various tools installed to streamline your analysis.
 
 ## Available tools
 
@@ -75,6 +78,15 @@ images.
 Google Rekall framework doesn't seem to be supported much these days, but it
 still does its work.
 
+### Additional Tools
+
+Apart from the memory-analysis tools, there are other programs installed to
+help you with your tasks:
+
+  * `strings`
+  * `foremost`
+  * `radare2` (you don't have to use it, it's just for the curious ones)
+
 ## Workshop Images & Exercises 
 
 In order to make everything a bit more user friendly, especially for those not
@@ -93,5 +105,5 @@ exercise 1
 
 and you should start seeing something like this:
 
-[![asciicast](https://asciinema.org/a/oxP3X8ZkwSIYyZ1nuevrw9YyS.svg)](https://asciinema.org/a/oxP3X8ZkwSIYyZ1nuevrw9YyS)
+[![asciicast](https://asciinema.org/a/oxP3X8ZkwSIYyZ1nuevrw9YyS.png)](https://asciinema.org/a/oxP3X8ZkwSIYyZ1nuevrw9YyS)
 
