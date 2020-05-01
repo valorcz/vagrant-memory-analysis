@@ -242,9 +242,31 @@ DataSectionObject 0x024a5840   None   \Device\HarddiskVolume1\DOCUME~1\unclebob\
 
 TBD
 
-## Forensic (`foremost`) Analysis
+## Forensic Analysis
 
-TBD
+### Prefetch Files
+
+Analysts familiar with Windows XP internals know that there's a mechanism
+built in Windows XP to speed up loading of executables. It's called _"prefetch"_
+and good thing about it is that it can help with discovery of processes executed
+in the past, with some extra details.
+
+The Volatility plugin we are about to use is another "extra" plugin, not available
+in the default Volatility distro. It can be found at [github repository][prefetchparser].
+Good news is that it doesn't require any fixing or updates :)
+
+```
+exercise01$ vol -f xp-infected.vmem prefetchparser
+```
+
+will provide us with some super-useful extra information -- we've found a new
+unexpected executable name!
+
+```
+Prefetch File                              Execution Time               Times Size
+------------------------------------------ ---------------------------- ----- --------
+POST_EXPRESS_LABEL.EXE-1FE60565.pf         2011-04-10 21:08:32 UTC+0000     1    17530
+```
 
 ## Final Hypothesis
 
@@ -262,6 +284,8 @@ TBD.
 | `md5`          | `dae329b01159385eef29f6d1416f2f27` | A document dropped by the malware. |
 
 ### Signatures
+
+#### Yara Signatures
 
 For any kind of future incidents, we prepared the following Yara signatures:
 
@@ -289,6 +313,17 @@ rule pv204_suspicious_agent {
 }
 ```
 
+#### Suricata Signatures
+
+Signatures for the possible DNS communication (malicious domains resolution),
+plus signatures for the HTTP scheme.
+
+> The latter won't be useful much these days, as majority of HTTP traffic is
+> actually HTTPS, encrypted. Even malware and botnets are now switching to
+> HTTPS, as it allows them to stay hidden from the plain sight.
+
+# Further Reading
 
 [pv204-workshop]: https://github.com/valorcz/vagrant-memory-analysis/blob/master/README.md
 [dnscache-plugin]: https://github.com/mnemonic-no/dnscache
+[prefetchparser]: https://github.com/superponible/volatility-plugins
