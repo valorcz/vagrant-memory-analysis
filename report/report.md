@@ -7,8 +7,8 @@ of the possible analysis workflows you could use for your own research/work.
 ## Sample Preparation
 
 Before we start with the analysis, we need to download the memory image. That
-can be done via `exercise 1` command issued on the VM command line (see [the
-official course documentation][pv204-workshop] for more details).
+can be done via `exercise 1` command issued on the VM command line (see
+[the official course documentation][pv204-workshop] for more details).
 
 ```bash
 ~$ exercise 1
@@ -171,21 +171,64 @@ last-modified:  2020-03-05T07:50:41Z
 source:         RIPE # Filtered
 ```
 
+### DNS Cache
+
+If we are lucky enough, the IP used by the malware was a result of a DNS
+resolution process; that'd allow us to search for the actual domain used
+in the network communication and prepare better signatures (or network
+protections).
+
+The DNS cache is just another structure in OS memory, thus we could search for
+it. `volatility` doesn't provide the DNS cache search functionality by default,
+but the setup we have in VM now does (I used the
+[dnscache plugin][dnscache-plugin], fixed some of the issues I found, and made
+it available as a part of the VM now).
+
+So, let's give it a try!
+
+> **INFO:** The plugin requires a folder for some temporary
+> downloads, so we need to create it first, and pass the path to the plugin.
+
+```
+exercise01$ mkdir dnsdump
+exercise01$ vol -f xp-infected.vmem dnscache --dump_dir dnsdump/
+```
+
+It'll take a moment and we'll learn some extra piece of info about the image!
+
+```
+Offset             Name                                                                  TTL Type   Value
+------------------ ---------------------------------------------------------------- -------- ------ -----
+
+0x0000000000742278 mialepromo.ru                                                             HASH   0xb2158
+0x00000000000b2158 mialepromo.ru                                                       14538 A      91.199.75.77
+0x00000000000b27c0                                                                     14538 A      91.199.75.14
+-------------------------
+PID: 1056, DLL: c:\windows\system32\dnsrslvr.dll
+```
+
+What's the new info? We found a domain the malware was trying to communicate
+with --- `mialepromo.ru`. Also, we identified another IP that could potentially
+be used for the network traffic --- `91.199.75.14`. Cool stuff!
+
 ### Brief Network Summary
 
-| Process Name   | ProcessID | IPs/Ports         | Comment                |
+| Process Name   | ProcessID | Details           | Comment                |
 | -------------- | --------: | ----------------: | ---------------------- |
 | \<unknown\>    |    `1204` | `91.199.75.77:80` | unknown parent process, most likely downloading stuff from Internet |
 | `svchost.exe`  |    `1056` |        `1031/udp` | a (system?) service listening on an UDP port |
+| `svchost.exe`  |    `1056` |    `mialepromo.ru` + `91.199.75.14` | This process tried to resolve some unexpected, potentially malicious DNS domains, and it resolved an alternate IP for the domain. |
 
-We can probably start constructing our preliminary hypothesis:
+We can probably start constructing a preliminary hypothesis:
 
 > A process `1204` communicated with the Internet, downloaded something (most
 > likely a .DOC or .RTF document among other things) and started the
-> `wordpad.exe` process. It's possible that it started another (system) service
-> listening on `1031/udp` port.
+> `wordpad.exe` process. It's possible that it started another service
+> listening on `1031/udp` port. Also, the newly started service may have been
+> actively participating in the communication with a suspicious domain,
+> `mialepromo.ru`.
 
-### Files Analysis
+## Files Analysis
 
 > **TO-BE-IMPROVED**
 
@@ -195,11 +238,11 @@ exercise01$ vol -f xp-infected.vmem dumpfiles -D dump -Q 0x00000000024a5840
 DataSectionObject 0x024a5840   None   \Device\HarddiskVolume1\DOCUME~1\unclebob\Desktop\document.doc
 ```
 
-### Strings Analysis
+## Strings Analysis
 
 TBD
 
-### Forensic (`foremost`) Analysis
+## Forensic (`foremost`) Analysis
 
 TBD
 
@@ -209,12 +252,13 @@ TBD.
 
 ### Indicators
 
-| IndicatorType | Value           | Comment                                    |
-| -------------- | -------------- | -------------------------------------------------- |
-| `ip-address`   | `91.199.75.77`  | Used for downloading of various stages of the malware. |  
-| `domain`       | `mialepromo.ru` | DNS name most likely bound to the address above, used for downloading of various stages of the malware. |
-| `user-agent`   | `Our_Agent`     | user-agent identification used for the malware downloads. |
-| `filename`     | `Post_Express_Label.exe` | Filename of the original malware file. |
+| IndicatorType  | Value                              | Comment                                    |
+| -------------- | ---------------------------------- | -------------------------------------------------- |
+| `ip-address`   |                    `91.199.75.77`  | Used for downloading of various stages of the malware. |  
+| `ip-address`   |                    `91.199.75.14`  | Not used directly, but it's an alternate IP of a malicious domain below. |
+| `domain`       |                    `mialepromo.ru` | DNS name most likely bound to the address above, used for downloading of various stages of the malware. |
+| `user-agent`   |                        `Our_Agent` | user-agent identification used for the malware downloads. |
+| `filename`     |           `Post_Express_Label.exe` | Filename of the original malware file. |
 | `md5`          | `dae329b01159385eef29f6d1416f2f27` | A document dropped by the malware. |
 
 ### Signatures
@@ -247,3 +291,4 @@ rule pv204_suspicious_agent {
 
 
 [pv204-workshop]: https://github.com/valorcz/vagrant-memory-analysis/blob/master/README.md
+[dnscache-plugin]: https://github.com/mnemonic-no/dnscache
