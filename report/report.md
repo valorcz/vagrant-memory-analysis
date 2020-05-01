@@ -21,7 +21,9 @@ Extracting the image...
 ## Image Identification
 
 Every memory analysis should start with proper identification of the provided
-memory image. Let's do it:
+memory image.
+
+Let's do it:
 
 ```bash
 exercise01$ vol -f xp-infected imageinfo
@@ -44,6 +46,16 @@ Which results in:
 ```
 
 We'll be dealing with WinXP image, Service Pack 3, running on `x86` platform.
+
+### Image Summary
+
+| Information | Value              | Comment |
+| ----------- | ------------------ | ------- |
+| Filename    | `xp-infected.vmem` |  n/a    |
+| MD5         | `927ce822c7f2c1cf3265c1d5b03281a4` | MD5 sum of the provided image |
+| SHA1        | `89998cc2704436a8842cd224e3c34e02907c7cd7` | SHA1 sum of the provided image |
+| OS          | Windows XP, Service Pack 3 | Image was created on `2011-04-10 21:29:25 UTC` |
+| Image Timezone | `-0700` | This could be a PDT/PST or anything US west-coast. Not that important for Windows OS though, as it uses UTC internally everywhere. Very wise! |
 
 ## Processes
 
@@ -234,13 +246,16 @@ We can probably start constructing a preliminary hypothesis:
 
 ```bash
 exercise01$ vol -f xp-infected.vmem dumpfiles -D dump -Q 0x00000000024a5840
+```
 
+The command `dumpfiles` allows us to extract a file (or what's present from the
+file in the RAM) to our folder. Could be useful for a further reverse engineering,
+forensic analysis, etc.
+
+```
 DataSectionObject 0x024a5840   None   \Device\HarddiskVolume1\DOCUME~1\unclebob\Desktop\document.doc
 ```
 
-## Strings Analysis
-
-TBD
 
 ## Forensic Analysis
 
@@ -255,7 +270,7 @@ The Volatility plugin we are about to use is another "extra" plugin, not availab
 in the default Volatility distro. It can be found at [github repository][prefetchparser].
 Good news is that it doesn't require any fixing or updates :)
 
-```
+```bash
 exercise01$ vol -f xp-infected.vmem prefetchparser
 ```
 
@@ -268,9 +283,24 @@ Prefetch File                              Execution Time               Times Si
 POST_EXPRESS_LABEL.EXE-1FE60565.pf         2011-04-10 21:08:32 UTC+0000     1    17530
 ```
 
+### Strings Analysis
+
+TBD
+
 ## Final Hypothesis
 
 TBD.
+
+### Timeline
+
+Fortunately we have a few timestamps collected during the analysis process.
+
+| Timestamp (UTC)      | Information                                            |
+| -------------------  | ------------------------------------------------------ |
+| `2011-04-10 21:08:32`| Prefetch record for `Post_Express_Label.exe` was created. |
+| `2011-04-10 21:08:37`| `svchost.exe (1056)` started listening on a UDP port. |
+| `2011-04-10 21:08:40`| `wordpad.exe (320)` process was started.              |
+
 
 ### Indicators
 
