@@ -10,6 +10,14 @@ Before we start with the analysis, we need to download the memory image. That
 can be done via `exercise 1` command issued on the VM command line (see [the
 official course documentation][pv204-workshop] for more details).
 
+```bash
+~$ exercise 1
+Downloading exercise01 image: xp-infected.vmem...
+######################################################################## 100.0%
+Extracting the image...
+  /home/vagrant/images/exercise01/xp-infected.vmem.bz2: done
+```
+
 ## Image Identification
 
 Every memory analysis should start with proper identification of the provided
@@ -144,7 +152,7 @@ informing us that a process `1056` (`svchost.exe`) has been listening on port
 ### WHOIS Lookup
 
 Let's check whether the WHOIS lookup reveals anything. However, we need to
-take the information with a grain of salt -- the image was taken in 2011,
+take the information with a grain of salt — the image was taken in 2011,
 the incident is now 9 years old, the information about network assignments
 can change. Last but not least, botnets and malware can re-use networks and
 computers that were infected in the past.
@@ -179,7 +187,13 @@ We can probably start constructing our preliminary hypothesis:
 
 ### Files Analysis
 
-TBD
+> **TO-BE-IMPROVED**
+
+```bash
+exercise01$ vol -f xp-infected.vmem dumpfiles -D dump -Q 0x00000000024a5840
+
+DataSectionObject 0x024a5840   None   \Device\HarddiskVolume1\DOCUME~1\unclebob\Desktop\document.doc
+```
 
 ### Strings Analysis
 
@@ -201,6 +215,7 @@ TBD.
 | `domain`       | `mialepromo.ru` | DNS name most likely bound to the address above, used for downloading of various stages of the malware. |
 | `user-agent`   | `Our_Agent`     | user-agent identification used for the malware downloads. |
 | `filename`     | `Post_Express_Label.exe` | Filename of the original malware file. |
+| `md5`          | `dae329b01159385eef29f6d1416f2f27` | A document dropped by the malware. |
 
 ### Signatures
 
