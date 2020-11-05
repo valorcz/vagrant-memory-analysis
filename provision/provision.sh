@@ -15,10 +15,10 @@ sudo yum install -y git cabextract
 # pip installations, to make a few things easier.. not really a clean install, but it's fast
 sudo pip install --upgrade pip
 sudo pip install wheel
-sudo pip install powerline-status 
+pip install powerline-status 
 # distorm3 requires a c99 compatible compilation (as of 2020/11/04), thus this hack
-sudo CFLAGS="-Wall -std=c99" pip install distorm3
-sudo pip install pefile pdbparse requests
+CFLAGS="-Wall -std=c99" pip install distorm3
+pip install pefile pdbparse requests
 
 # Prepare the VirtualEnv for Google Rekall. This allows us to use the latest available/functional version,
 # and to use Python3
@@ -27,6 +27,7 @@ virtualenv ~/.venv/ --python python3
   source ~/.venv/bin/activate
   ln -s /usr/lib/libyara.so /home/vagrant/.venv/lib/libyara.so
   pip install --upgrade pip setuptools pyasn1 pyyaml wheel yara-python
+  pip install construct==2.9.52 pdbparse
   pip install future==0.16.0 pyaff4==0.26.post6
   pip install rekall rekall-agent
 
@@ -39,6 +40,9 @@ virtualenv ~/.venv/ --python python3
 
   deactivate
 )
+
+# Patch the discontinued Rekall agent to work a bit at least
+patch ~/.venv/lib/python3.6/site-packages/rekall_agent/agent.py /vagrant/provision/rekal_agent.patch
 
 # Prepare some further folder structure for our work
 mkdir ~/bin/

@@ -1,0 +1,26 @@
+--- agent.py.orig	2020-11-05 12:51:23.941399790 +0000
++++ agent.py	2020-11-05 12:51:45.486404412 +0000
+@@ -67,7 +67,7 @@
+ from rekall_lib.rekall_types import client
+ from rekall_lib.rekall_types import resources
+ 
+-from wheel import pep425tags
++# from wheel import pep425tags
+ 
+ if six.PY3:
+     unicode = str
+@@ -162,10 +162,10 @@
+             version = platform.linux_distribution()[1]  # 12.04
+ 
+         # Emulate PEP 425 naming conventions - e.g. cp27-cp27mu-linux_x86_64.
+-        pep425tag = "%s%s-%s-%s" % (pep425tags.get_abbr_impl(),
+-                                    pep425tags.get_impl_ver(),
+-                                    str(pep425tags.get_abi_tag()).lower(),
+-                                    pep425tags.get_platform())
++        # pep425tag = "%s%s-%s-%s" % (pep425tags.get_abbr_impl(),
++        #                             pep425tags.get_impl_ver(),
++        #                             str(pep425tags.get_abi_tag()).lower(),
++        #                             pep425tags.get_platform())
+ 
+         return cls.from_keywords(
+             session=session,

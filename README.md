@@ -61,7 +61,7 @@ There are three tools pre-installed and configured in the VM at the moment:
 
 * `vol`
 * `vol3`
-* `rekal`
+* `rekal` (upstream discontinued in October 2020)
 
 ### `vol`
 
@@ -73,10 +73,19 @@ Volatility tool has a very unstable beta version, Volatility3. However, it
 processes the memory slightly differently and it could work on some memory
 images.
 
+*November 2020 update*: It seems that Volatility3 is undergoing another
+major rewrite, combined with changes on Microsoft side too (PDB debugging 
+symbols seem to be restructured a bit). That causes problems with Windows
+image analysis.
+
 ### `rekal`
 
 Google Rekall framework doesn't seem to be supported much these days, but it
-still does its work.
+still does its work. 
+
+*November 2020 update*: Google team officially discontinued the product
+and turned off some of the artifact repositories. Even though `rekal` command
+still kind of works, it may break any time.
 
 ### Additional Tools
 
