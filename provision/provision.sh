@@ -14,7 +14,10 @@ sudo yum install -y git cabextract
 
 # pip installations, to make a few things easier.. not really a clean install, but it's fast
 sudo pip install --upgrade pip
-sudo pip install powerline-status distorm3
+sudo pip install wheel
+sudo pip install powerline-status 
+# distorm3 requires a c99 compatible compilation (as of 2020/11/04), thus this hack
+sudo CFLAGS="-Wall -std=c99" pip install distorm3
 sudo pip install pefile pdbparse requests
 
 # Prepare the VirtualEnv for Google Rekall. This allows us to use the latest available/functional version,
