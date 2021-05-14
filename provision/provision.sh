@@ -13,12 +13,12 @@ sudo yum install -y python2-volatility foremost unzip yara yara-dev python2-yara
 sudo yum install -y git cabextract
 
 # pip installations, to make a few things easier.. not really a clean install, but it's fast
-sudo pip install --upgrade pip
+sudo pip install --upgrade "pip < 21.0"
 sudo pip install wheel
 pip install powerline-status 
 # distorm3 requires a c99 compatible compilation (as of 2020/11/04), thus this hack
 CFLAGS="-Wall -std=c99" pip install distorm3
-pip install pefile pdbparse requests
+pip install construct==2.9.52 pefile==2019.4.18 pdbparse requests 
 
 # Prepare the VirtualEnv for Google Rekall. This allows us to use the latest available/functional version,
 # and to use Python3
@@ -26,7 +26,8 @@ virtualenv ~/.venv/ --python python3
 (
   source ~/.venv/bin/activate
   ln -s /usr/lib/libyara.so /home/vagrant/.venv/lib/libyara.so
-  pip install --upgrade pip setuptools pyasn1 pyyaml wheel yara-python
+  pip install --upgrade pip 
+  pip install setuptools pyasn1 pyyaml wheel yara-python
   pip install construct==2.9.52 pdbparse
   pip install future==0.16.0 pyaff4==0.26.post6
   pip install rekall rekall-agent
