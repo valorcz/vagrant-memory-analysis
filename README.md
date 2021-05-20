@@ -55,6 +55,10 @@ vagrant ssh
 and that's it! Now you are working in a well-prepared forensic environment,
 with various tools installed to streamline your analysis.
 
+**Note:** If a password is required (this is mostly the case of Windows OS,
+where the SSH implementation doesn't play along), use the password `vagrant`.
+That'll allow you to log in.
+
 ## Available tools
 
 There are three tools pre-installed and configured in the VM at the moment:

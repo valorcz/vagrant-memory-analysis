@@ -9,11 +9,13 @@ sudo yum updateinfo
 sudo yum install -y vim wget python-pip gcc gcc-c++ python-devel readline-devel patch capstone git python3 python3-devel python-virtualenv radare2 strace
 sudo yum remove -y PyYAML
 sudo yum install -y bash-completion bash-completion-extras
-sudo yum install -y python2-volatility foremost unzip yara yara-dev python2-yara libjpeg-turbo-devel
+sudo yum install -y python2-volatility unzip yara yara-devel python2-yara libjpeg-turbo-devel
 sudo yum install -y git cabextract
+# Foremost isnt' a part of CentOS repos anymore :-/
+sudo yum install -y https://forensics.cert.org/cert-forensics-tools-release-el7.rpm
+sudo yum install -y foremost
 
-# pip installations, to make a few things easier.. not really a clean install, but it's fast
-sudo pip install --upgrade "pip < 21.0"
+sudo pip install --upgrade --no-cache-dir "pip < 21.0"
 sudo pip install wheel
 pip install powerline-status 
 # distorm3 requires a c99 compatible compilation (as of 2020/11/04), thus this hack
@@ -26,7 +28,7 @@ virtualenv ~/.venv/ --python python3
 (
   source ~/.venv/bin/activate
   ln -s /usr/lib/libyara.so /home/vagrant/.venv/lib/libyara.so
-  pip install --upgrade pip 
+  pip install --upgrade pip
   pip install setuptools pyasn1 pyyaml wheel yara-python
   pip install construct==2.9.52 pdbparse
   pip install future==0.16.0 pyaff4==0.26.post6
