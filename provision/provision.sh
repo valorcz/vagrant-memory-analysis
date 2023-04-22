@@ -45,12 +45,14 @@ CPPFLAGS=-I/usr/include/openssl11 LDFLAGS=-L/usr/lib64/openssl11 pyenv install 3
 
   source ~/.venv/bin/activate
 
-  pip install yara-python crypto
+  pip install --upgrade pip
+  pip install wheel
+  pip install yara-python pycryptodome
 
   git clone https://github.com/volatilityfoundation/volatility3 .volatility3
   cd .volatility3
-  python setup.py build
-  python setup.py install
+  pip install .
+
   # TODO: Check if we need to download symbols first
 
   pip install oletools peepdf
