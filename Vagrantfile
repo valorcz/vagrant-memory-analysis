@@ -52,7 +52,12 @@ Vagrant.configure("2") do |config|
      vb.memory = "1024"
      vb.cpus = "2"
    end
-  #
+
+   # Try to prevent vbguest upgrade issues
+   if Vagrant.has_plugin?("vagrant-vbguest")
+     config.vbguest.auto_update = false
+   end
+  
   # View the documentation for the provider you are using for more
   # information on available options.
   config.vm.hostname = "memory-analysis"
