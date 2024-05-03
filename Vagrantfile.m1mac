@@ -1,0 +1,42 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/centos7"
+
+  # Run this box in x86_64 mode, despite the performance hit
+  config.vm.provider "qemu" do |qe|
+    qe.arch = "x86_64"
+    qe.machine = "q35"
+    qe.cpu = "max"
+    qe.net_device = "virtio-net-pci"
+    qe.ssh_port = "50023"
+  end
+
+  # WARN: Not working pure arm64 setup. Perhaps for future runs of this course :)
+  # config.vm.box = "generic/centos7"
+  # config.vm.provider "qemu" do |qe|
+  #  qe.arch = "aarch64"
+  #  qe.ssh_port = "50023"
+  #  qe.machine = "virt,accel=hvf"
+  #  # qe.extra_qemu_args = ["-D", "./qemu-start-log.txt", "-boot", "order=d,menu=on"]
+  #  qe.cpu = "cortex-a72"
+  #end
+
+  config.vm.synced_folder ".", "/vagrant", type: "rsync",
+    rsync__exclude: [".git/", "images", "samples", "slides", "symbols"]
+
+  # View the documentation for the provider you are using for more
+  # information on available options.
+  config.vm.hostname = "memory-analysis"
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+  # documentation for more information about their specific syntax and use.
+  config.vm.provision "shell", privileged: false, path: "provision/provision.sh"
+end
+
