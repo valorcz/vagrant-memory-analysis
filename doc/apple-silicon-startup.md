@@ -1,6 +1,6 @@
 # Running on Apple M1/M2/M3 hardware
 
-If you happen to be using Mac computers with Apple silicon processors,
+If you happen to be using macOS computers with Apple Silicon processors,
 you need to use a slightly (or very, depends) process for provisioning
 a VM with the required tools.
 

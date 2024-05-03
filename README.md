@@ -14,7 +14,7 @@ In order to work with this repository, you need the following software:
 * [VirtualBox](https://www.virtualbox.org/)
 * [HashiCorp Vagrant](https://www.vagrantup.com/)
 
-Both installed on your system. They are available for Windows, Linux and MacOS,
+Both installed on your system. They are available for Windows, Linux and macOS,
 so you should be able to get it for the platform of your liking.
 
 Then, you need to either clone this `git` repository (if you know how to work
@@ -37,7 +37,7 @@ vagrant up
 
 It will do the magic. Be patient, the building process may take some time,
 depending on your laptop/workstation performance and network bandwidth. Also,
-there may be a few warnings around the built process, but they are generally
+there may be a few warnings around the build process, but they are generally
 ok and not affecting the functionality of the resulting VM.
 
 [![asciicast](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN.png)](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN)
@@ -51,7 +51,7 @@ the working environment too.
 
 ## Logging to the VM
 
-When the build of the VM is finished, you can logon to the built VM with
+When the build of the VM is finished, you can log on to the built VM with
 
 ```bash
 vagrant ssh
@@ -78,7 +78,7 @@ This command runs the original, stable version of Volatility.
 ### `vol3`
 
 Volatility tool has a stable new version, Volatility3. However, it
-processes the memory slightly differently and it could work on some memory
+processes the memory slightly differently, and it could work on some memory
 images. Also, the set of available plugins is still significantly
 smaller than for the previous version.
 
@@ -93,12 +93,12 @@ help you with your tasks:
 
 ## Workshop Images & Exercises
 
-In order to make everything a bit more user friendly, especially for those not
+In order to make everything a bit more user-friendly, especially for those not
 really familiar with command-line interfaces, I prepared a shell function that
 will download & unpack each memory image in a specific working directory, and
 switch you into that directory.
 
-So, when you logon to the built VM image (via `vagrant ssh`, as mentioned above),
+So, when you log on to the built VM image (via `vagrant ssh`, as mentioned above),
 you'll get a prompt.
 
 To start working on the very first exercise image, simply type in the following command:
