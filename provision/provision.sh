@@ -16,7 +16,7 @@ sudo yum install -y openssl11-devel openssl11-libs openssl11 xz-devel
 sudo yum remove -y PyYAML
 sudo yum install -y bash-completion bash-completion-extras
 sudo yum install -y python2-volatility unzip yara yara-devel python2-yara libjpeg-turbo-devel
-sudo yum install -y git cabextract bunzip2 p7zip
+sudo yum install -y git cabextract bzip2 p7zip
 # Foremost isnt' a part of CentOS repos anymore :-/
 sudo yum install -y https://forensics.cert.org/cert-forensics-tools-release-el7.rpm
 sudo yum install -y foremost
