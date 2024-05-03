@@ -1,11 +1,11 @@
 # Memory Analysis Toolbox
 
-> :star: Big thanks to @adamivora for providing his files to help with
-> dockerization of this toolset! Please follow [Apple Mx
-> instructions](doc/apple-silicon-startup.md) for more detailed instructions.
-
 Well, "toolbox" could be an overstatement, but this Vagrant image builds a set
 of tools you could use for memory analysis exercises.
+
+> :star: Big thanks to [Adam Ivora](https://github.com/adamivora) for providing
+> his files to help with dockerization of this toolset! Please follow [Apple Mx
+> instructions](doc/apple-silicon-startup.md) for more detailed instructions.
 
 ## Requirements
 
