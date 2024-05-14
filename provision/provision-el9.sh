@@ -24,10 +24,11 @@ function prepare_system_packages() {
 # both version
 function prepare_pyenv() {
   curl https://pyenv.run | bash
+  # Read the pyenv supporting environment, so that we can use it right away
   source /vagrant/provision/provision-pyenv.sh
 }
 
-function volatility2_setup() {
+function setup_volatility2() {
   pyenv install 2.7 # 2.7.18
 
   # Create a specific virtualenv
@@ -48,7 +49,7 @@ function volatility2_setup() {
   )
 }
 
-function volatility3_setup() {
+function setup_volatility3() {
   pyenv install 3.12
 
   # Create a specific virtualenv
@@ -66,15 +67,26 @@ function volatility3_setup() {
 
     cd .volatility3 || return
     pip install .
+  )
+}
+
+# All the things that are useful, and need a setup
+function setup_additional_tools() {
+  (
+    pyenv shell py3
 
     # Additional analysis tools for Office and PDF docs
     pip install oletools peepdf
   )
 }
-
+  
 # Prepare some Yara signatures
 # TODO: Make this optional
 function setup_yara_signatures() {
+  # This is our crafted signature for one of the exercises
+  cp /vagrant/signatures/suspicious_domain.yara ~/yara/
+
+  # Download other signatures from internet
   (
     cd ~/yara/ || return
     git clone https://github.com/Neo23x0/signature-base
@@ -111,8 +123,9 @@ function setup_environment() {
   prepare_pyenv
 
   # Various tools installation
-  volatility2_setup
-  volatility3_setup
+  setup_volatility2
+  setup_volatility3
+  setup_additional_tools
 
   # Final touches
   setup_folders
@@ -124,4 +137,5 @@ function setup_environment() {
 
 
 # TODO: Create a main() function with some helps and hints
+setup_environment
 
