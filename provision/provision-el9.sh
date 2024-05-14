@@ -39,7 +39,7 @@ function volatility2_setup() {
 
     pip install --upgrade pip
     pip install wheel
-    pip install pefile==2019.4.18 construct==2.9.52 yara-python pycryptodome distorm3 pdbparse 
+    pip install pefile==2019.4.18 construct==2.9.52 yara-python pycryptodome distorm3 pdbparse requests
 
     git clone https://github.com/volatilityfoundation/volatility .volatility2
 
@@ -60,7 +60,7 @@ function volatility3_setup() {
 
     pip install --upgrade pip
     pip install wheel
-    pip install yara-python pycryptodome
+    pip install yara-python pycryptodome requests
 
     git clone https://github.com/volatilityfoundation/volatility3 .volatility3
 
@@ -72,19 +72,22 @@ function volatility3_setup() {
   )
 }
 
-# create the folders we need for our seminar
-function setup_folders() {
-  # Basic folders
-  mkdir ~/bin/
-  mkdir ~/images/
-
-  # Prepare some Yara signatures
-  mkdir ~/yara/
+# Prepare some Yara signatures
+# TODO: Make this optional
+function setup_yara_signatures() {
   (
     cd ~/yara/ || return
     git clone https://github.com/Neo23x0/signature-base
     git clone https://github.com/Yara-Rules/rules
   )
+}
+
+# create the folders we need for our seminar
+function setup_folders() {
+  # Basic folders
+  mkdir ~/bin/
+  mkdir ~/images/
+  mkdir ~/yara/
 
   # Install the extra Volatility plugins
   cp -a /vagrant/plugins ~/
@@ -114,6 +117,9 @@ function setup_environment() {
   # Final touches
   setup_folders
   setup_bashrc
+
+  # In case we need them, but mostly we don't
+  setup_yara_signatures
 }
 
 
