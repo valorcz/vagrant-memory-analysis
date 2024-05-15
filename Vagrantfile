@@ -29,7 +29,10 @@ Vagrant.configure("2") do |config|
 
   # Apple Silicon/aarch64: This setup is specific for aarch64 platforms
   #                        so that we don't need to emulate x86_64
+
   if arch == "arm64"
+    # puts 'Provisioning arm64 code'
+
     config.vm.box_architecture = "arm64"
 
     config.vm.provider "qemu" do |qe|

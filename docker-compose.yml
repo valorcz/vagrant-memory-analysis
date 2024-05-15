@@ -1,7 +1,6 @@
-version: '3'
-
+---
 services:
-  memory-analysis:
+  pv204_memory_analysis:
     image: pv204_memory_analysis
     container_name: memory_analysis
     # platform: linux/amd64

@@ -30,6 +30,7 @@ function prepare_pyenv() {
 }
 
 function setup_volatility2() {
+  eval "$(pyenv init -)"
   pyenv install 2.7 # 2.7.18
 
   # Create a specific virtualenv
@@ -51,6 +52,7 @@ function setup_volatility2() {
 }
 
 function setup_volatility3() {
+  eval "$(pyenv init -)"
   pyenv install 3.12
 
   # Create a specific virtualenv
@@ -74,6 +76,7 @@ function setup_volatility3() {
 # All the things that are useful, and need a setup
 function setup_additional_tools() {
   (
+    eval "$(pyenv init -)"
     pyenv shell py3
 
     # Additional analysis tools for Office and PDF docs
@@ -136,7 +139,4 @@ function setup_environment() {
   setup_yara_signatures
 }
 
-# TODO: Create a main() function with some helps and hints
 export PATH="~/.pyenv/bin:$PATH"
-setup_environment
-
