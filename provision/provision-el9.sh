@@ -17,15 +17,17 @@ function prepare_system_packages() {
   
   # We are missing yara-devel, may or may not be a problem
   sudo dnf install -y libffi-devel zlib zlib-devel bzip2-devel openssl-devel sqlite-devel readline-devel \
-                      libjpeg-turbo-devel unzip yara cabextract bzip2 p7zip radare2 strace
+                      libjpeg-turbo-devel unzip yara cabextract bzip2 p7zip radare2 strace \
+                      git glibc-langpack-en glibc-locale-source
 }
 
 # pyenv installation, due to Volatility,
 # both version
 function prepare_pyenv() {
   curl https://pyenv.run | bash
-  # Read the pyenv supporting environment, so that we can use it right away
-  source /vagrant/provision/provision-pyenv.sh
+  # Prepare the pyenv supporting environment, so that we can use it right away
+  export PATH="~/.pyenv/bin:$PATH"
+  eval "$(pyenv init -)"
 }
 
 function setup_volatility2() {
