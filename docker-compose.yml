@@ -1,8 +1,8 @@
-version: '3'
-
+---
 services:
-  memory-analysis:
-    container_name: memory-analysis
+  pv204_memory_analysis:
+    image: valorcz/pv204_memory_analysis
+    container_name: memory_analysis
     # platform: linux/amd64
     build: .
     volumes:
