@@ -16,17 +16,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.box = "generic/alma9"
 
-  # Run this box in x86_64 mode, despite the performance hit
-  #config.vm.box_architecture = "amd64"
-  #config.vm.provider "qemu" do |qe|
-  #  qe.arch = "x86_64"
-  #  qe.machine = "q35"
-  #  qe.cpu = "max"
-  #  qe.extra_qemu_args = ["-D", "./qemu-start-log.txt", "-boot", "order=d,menu=on"]
-  #  qe.net_device = "virtio-net-pci"
-  #  qe.ssh_port = "50023"
-  #end
-
   # Apple Silicon/aarch64: This setup is specific for aarch64 platforms
   #                        so that we don't need to emulate x86_64
 

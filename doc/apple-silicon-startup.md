@@ -4,8 +4,6 @@ If you happen to be using macOS computers with Apple Silicon processors,
 you need to use a slightly (or very, depends) process for provisioning
 a VM with the required tools.
 
-> :warn: Currently my setup only works with `x86_64` emulation.
-
 ## Vagrant-based setup
 
 ### Installing base tools
@@ -15,9 +13,7 @@ on your host:
 
 ```bash
 brew install vagrant qemu
-#Due to dependency errors, we must install vbguest first..
 
-vagrant plugin install vagrant-vbguest
 vagrant plugin install vagrant-qemu
 ```
 
@@ -26,7 +22,7 @@ vagrant plugin install vagrant-qemu
 Then, if everything goes fine, things could be pretty straightforward.
 
 ```bash
-VAGRANT_VAGRANTFILE=Vagrantfile.m1mac vagrant up
+vagrant up
 ```
 
 ## Dockerized version
