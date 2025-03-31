@@ -11,8 +11,8 @@ of tools you could use for memory analysis exercises.
 
 In order to work with this repository, you need the following software:
 
-* [VirtualBox](https://www.virtualbox.org/)
 * [HashiCorp Vagrant](https://www.vagrantup.com/)
+* [VirtualBox](https://www.virtualbox.org/)
 
 Both installed on your system. They are available for Windows, Linux and macOS,
 so you should be able to get it for the platform of your liking.
@@ -42,12 +42,12 @@ ok and not affecting the functionality of the resulting VM.
 
 [![asciicast](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN.png)](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN)
 
-### Without VirtualBox
+### Manual setup
 
-If you don't like VirtualBox or cannot use it for any reason, my recommendation is
-to get a VM image of CentOS 7 somewhere and when you get there, you can re-use the
-`provision/provision.sh` script from my repository. In theory, it should prepare
-the working environment too.
+If you don't like VirtualBox/Vagrant/Docker or cannot use it for any reason, my
+recommendation is to get a VM image of AlmaLinux 9 somewhere and when you get
+there, you can re-use the `provision/provision.sh` script from my repository.
+In theory, it should prepare the working environment too.
 
 ## Logging to the VM
 
@@ -88,8 +88,12 @@ Apart from the memory-analysis tools, there are other programs installed to
 help you with your tasks:
 
 * `strings`
+* `peepdf` 
+    * for detailed PDF analysis, with some JavaScript insight too
 * `foremost`
-* `radare2` (you don't have to use it, it's just for the curious ones)
+    * (!) temporarily unavailable due to the lack of RPM packages
+* `radare2` 
+    * you don't have to use it, it's just for the curious ones
 
 ## Workshop Images & Exercises
 
