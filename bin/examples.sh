@@ -3,7 +3,7 @@
 function exercise() {
   # Constants, almost
   export BASEURL="https://dior.ics.muni.cz/~valor/pv204"
-  declare -a IMAGES=("homework.vmem.bz2"  "xp-infected.vmem.bz2" "win7_x64.vmem.bz2" "bob.vmem.bz2", "emotetvictim.vmem.bz2")
+  declare -a IMAGES=("homework.vmem.bz2"  "xp-infected.vmem.bz2" "win7_x64.vmem.bz2" "bob.vmem.bz2" "emotetvictim.vmem.bz2")
   maximages=$((${#IMAGES[@]}-1))
 
   function usage() { # Function: Print a help message.
