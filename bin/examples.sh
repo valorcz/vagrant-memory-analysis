@@ -2,7 +2,7 @@
 
 function exercise() {
   # Constants, almost
-  export BASEURL="https://dior.ics.muni.cz/~valor/pv204"
+  export BASEURL="https://www.fi.muni.cz/~xlorenc1/pv204"
   declare -a IMAGES=("homework.vmem.bz2"  "xp-infected.vmem.bz2" "win7_x64.vmem.bz2" "bob.vmem.bz2" "emotetvictim.vmem.bz2")
   maximages=$((${#IMAGES[@]}-1))
 
@@ -29,7 +29,7 @@ function exercise() {
   # If the image hasn't been downloaded yet
   if ! [ -s ${target}/${image} -o -s ${target}/${plainImage} ]; then
     echo "Downloading exercise${lzNumber} image: ${plainImage}..."
-    curl -# ${BASEURL}/images/${image} -o ${target}/${image}
+    curl -L -# ${BASEURL}/images/${image} -o ${target}/${image}
 
     # Successful download?
     if [ 0 -eq $? ]; then

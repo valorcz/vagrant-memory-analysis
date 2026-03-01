@@ -15,6 +15,7 @@ Vagrant.configure("2") do |config|
   arch = `arch`.strip()
 
   config.vm.box = "generic/alma9"
+  config.vm.box_version = "4.3.12"
 
   # Apple Silicon/aarch64: This setup is specific for aarch64 platforms
   #                        so that we don't need to emulate x86_64
