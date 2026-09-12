@@ -134,6 +134,40 @@ function setup_environment() {
 
   # In case we need them, but mostly we don't
   setup_yara_signatures
+
+  # Volatility 3 symbol cache (Approach 1 & 2)
+  # Comment out the line below if you prefer to skip pre-populating symbols
+  setup_volatility3_symbols
+}
+
+# Setup Volatility 3 symbol tables
+# Approach 2: Check if host provided symbols in /vagrant/symbols (synced via Vagrant)
+# Approach 1: Fallback download if host cache is not present
+function setup_volatility3_symbols() {
+  echo "Setting up Volatility 3 symbols..."
+  local SYMBOLS_DIR="${HOME}/.local/share/volatility3/symbols"
+  mkdir -p "${HOME}/.local/share/volatility3"
+
+  # If host provided symbols in /vagrant/symbols, link them directly
+  if [ -d "/vagrant/symbols" ] && [ -n "$(ls -A /vagrant/symbols 2>/dev/null)" ]; then
+    echo "Found host symbols in /vagrant/symbols. Linking to ${SYMBOLS_DIR}..."
+    rm -rf "${SYMBOLS_DIR}"
+    ln -s /vagrant/symbols "${SYMBOLS_DIR}"
+    return 0
+  fi
+
+  # Fallback: Download official Windows symbol pack (~840MB compressed)
+  # Comment out the block below if you prefer to rely strictly on host cache or on-demand PDB downloads
+  echo "Host symbols not found. Downloading official Windows symbol pack (~840MB)..."
+  mkdir -p "${SYMBOLS_DIR}"
+  if curl -f -sSL "https://downloads.volatilityfoundation.org/volatility3/symbols/windows.zip" -o /tmp/windows_symbols.zip; then
+    unzip -q -o /tmp/windows_symbols.zip -d "${SYMBOLS_DIR}/"
+    rm -f /tmp/windows_symbols.zip
+    echo "Volatility 3 Windows symbols installed successfully."
+  else
+    echo "Notice: Symbol pack download failed or skipped. Volatility 3 will attempt to fetch PDBs on-demand." >&2
+    rm -f /tmp/windows_symbols.zip
+  fi
 }
 
 # TODO: Create a main() function with some helps and hints

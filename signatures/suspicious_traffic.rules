@@ -1,0 +1,11 @@
+# Suricata / Snort Network Detection Rules for PV204 Lab Exercises
+# Reference: https://github.com/valorcz/vagrant-memory-analysis
+
+# Detect DNS query resolution for malicious domain mialepromo.ru
+alert dns $HOME_NET any -> any 53 (msg:"PV204 - Suspicious DNS Query to mialepromo.ru"; dns.query; content:"mialepromo.ru"; nocase; endswith; reference:url,https://github.com/valorcz/vagrant-memory-analysis; classtype:trojan-activity; sid:1000001; rev:1;)
+
+# Detect HTTP connection with malware-specific User-Agent "Our_Agent"
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"PV204 - Suspicious User-Agent (Our_Agent)"; flow:established,to_server; http.user_agent; content:"Our_Agent"; depth:9; reference:url,https://github.com/valorcz/vagrant-memory-analysis; classtype:trojan-activity; sid:1000002; rev:1;)
+
+# Detect direct HTTP communication to known malicious IP 91.199.75.77
+alert tcp $HOME_NET any -> 91.199.75.77 80 (msg:"PV204 - Outbound TCP Connection to mialepromo.ru C2 IP"; flow:to_server; reference:url,https://github.com/valorcz/vagrant-memory-analysis; classtype:trojan-activity; sid:1000003; rev:1;)
