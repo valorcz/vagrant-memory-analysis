@@ -1,116 +1,116 @@
 # Memory Analysis Toolbox
 
-Well, "toolbox" could be an overstatement, but this Vagrant image builds a set
-of tools you could use for memory analysis exercises.
+A hands-on, safe forensic environment designed for university students to practice memory analysis and incident response using **Volatility 2** and **Volatility 3**.
 
-> :star: Big thanks to [Adam Ivora](https://github.com/adamivora) for providing
-> his files to help with dockerization of this toolset! Please follow [Apple Mx
-> instructions](doc/apple-silicon-startup.md) for more detailed instructions.
+---
 
 ## Requirements
 
-In order to work with this repository, you need the following software:
+You can run this environment using **Docker** (recommended) or **Vagrant**:
 
-* [HashiCorp Vagrant](https://www.vagrantup.com/)
-* [VirtualBox](https://www.virtualbox.org/)
+* **Docker Option (Recommended)**: [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS, Windows, Linux) or Docker Engine. This works cross-platform out-of-the-box on both **x86_64** and **Apple Silicon (M1/M2/M3/M4)**.
+* **Vagrant Option**: [HashiCorp Vagrant](https://www.vagrantup.com/) + [VirtualBox](https://www.virtualbox.org/) (for x86_64) or QEMU with the `vagrant-qemu` plugin (for Apple Silicon).
 
-Both installed on your system. They are available for Windows, Linux and macOS,
-so you should be able to get it for the platform of your liking.
-
-Then, you need to either clone this `git` repository (if you know how to work
-with `git`, it's a preferred way), or download
-[its ZIP archive](https://github.com/valorcz/vagrant-memory-analysis/archive/master.zip).
+To get started, clone this repository:
 
 ```bash
 git clone https://github.com/valorcz/vagrant-memory-analysis.git
+cd vagrant-memory-analysis
 ```
 
-## Building the Image
+---
 
-As always, it's very straightforward with Vagrant. Switch to the command-line,
-get to the folder where you downloaded (and unpacked, if necessary) the
-repository, and on the command-line, run the following command:
+## Workshop Preparation (Recommended: 1–2 Days Ahead)
+
+Please complete the following setup steps before attending the lab so you are ready to analyze samples immediately without waiting for downloads or builds in class:
+
+### Step 1: Pre-Download Volatility 3 Symbols (Host)
+
+Volatility 3 requires OS symbol tables (ISF) to parse kernel data structures. Run the helper script on your host machine to cache the official symbol pack in `./symbols`:
+
+```bash
+./build/download-symbols.sh
+```
+
+*(This caches ~840MB of Windows symbols once on your host. Both Docker and Vagrant automatically mount these symbols so your environment operates offline without initial command delays).*
+
+### Step 2: Launch Your Environment
+
+#### Option A: Docker Compose (Universal — macOS, Windows, Linux)
+
+Docker is the simplest, platform-independent option.
+
+* **Fastest (Use Pre-built Image)**:
+  ```bash
+  docker compose -f docker-compose.prebuilt.yml run --rm memory_analysis /bin/bash
+  ```
+
+* **Or Build Locally**:
+  ```bash
+  docker compose build
+  docker compose run --rm memory_analysis /bin/bash
+  ```
+
+#### Option B: Vagrant (VirtualBox or QEMU)
+
+If you prefer a full virtual machine via Vagrant:
 
 ```bash
 vagrant up
-```
-
-It will do the magic. Be patient, the building process may take some time,
-depending on your laptop/workstation performance and network bandwidth. Also,
-there may be a few warnings around the build process, but they are generally
-ok and not affecting the functionality of the resulting VM.
-
-[![asciicast](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN.png)](https://asciinema.org/a/3kndqsOpEIfhlaD3DycIaDuhN)
-
-### Manual setup
-
-If you don't like VirtualBox/Vagrant/Docker or cannot use it for any reason, my
-recommendation is to get a VM image of AlmaLinux 9 somewhere and when you get
-there, you can re-use the `provision/provision.sh` script from my repository.
-In theory, it should prepare the working environment too.
-
-## Logging to the VM
-
-When the build of the VM is finished, you can log on to the built VM with
-
-```bash
 vagrant ssh
 ```
 
-and that's it! Now you are working in a well-prepared forensic environment,
-with various tools installed to streamline your analysis.
+> **Apple Silicon Mac Note:** If using Vagrant on Apple Silicon, ensure you have QEMU installed (`brew install qemu && vagrant plugin install vagrant-qemu`).
+>
+> **Windows Note:** If prompted for an SSH password, use `vagrant`.
 
-**Note:** If a password is required (this is mostly the case of Windows OS,
-where the SSH implementation doesn't play along), use the password `vagrant`.
-That'll allow you to log in.
+### Step 3: Verify Your Setup
 
-## Available tools
+Once inside your container or VM shell, test that both Volatility 2 and Volatility 3 respond:
 
-There are three tools pre-installed and configured in the VM at the moment:
+```bash
+vol -h
+vol3 -h
+```
 
-* `vol`
-* `vol3`
+If both commands print their help screens, your environment is ready for class!
 
-### `vol`
+---
 
-This command runs the original, stable version of Volatility.
+## Available Tools
 
-### `vol3`
+The environment provides both major versions of the Volatility memory forensics framework:
 
-Volatility tool has a stable new version, Volatility3. However, it
-processes the memory slightly differently, and it could work on some memory
-images. Also, the set of available plugins is still significantly
-smaller than for the previous version.
+* `vol`: Volatility 2.7 (Python 2.7). Our primary tool for legacy Windows XP images due to its rich community plugins (`connscan`, `sockets`, `dnscache`, `prefetchparser`).
+* `vol3`: Volatility 3 (Python 3). The modern framework rewrite for 64-bit Windows 7, 10, 11, and Linux analysis.
 
-### Additional Tools
+> 📖 **Rosetta Stone Guide:** For a side-by-side command comparison and an explanation of when to use each version, see our [Volatility 2 vs. Volatility 3 Rosetta Stone](doc/volatility-rosetta-stone.md).
 
-Apart from the memory-analysis tools, there are other programs installed to
-help you with your tasks:
+### Additional Pre-installed Utilities
+* `strings`: For targeted ASCII and 16-bit little-endian Unicode extraction.
+* `peepdf` & `oletools`: For inspecting dropped PDF, Word, and RTF documents (`rtfobj`, `olevba`).
+* `yara`: For signature scanning across memory dumps and carved files.
+* `radare2`: For reverse engineering and disassembling carved payloads.
 
-* `strings`
-* `peepdf` 
-    * for detailed PDF analysis, with some JavaScript insight too
-* `foremost`
-    * (!) temporarily unavailable due to the lack of RPM packages
-* `radare2` 
-    * you don't have to use it, it's just for the curious ones
+---
 
 ## Workshop Images & Exercises
 
-In order to make everything a bit more user-friendly, especially for those not
-really familiar with command-line interfaces, I prepared a shell function that
-will download & unpack each memory image in a specific working directory, and
-switch you into that directory.
+The environment includes a built-in helper function, `exercise`, that automatically downloads, decompresses, and navigates to the working directory for each lab image.
 
-So, when you log on to the built VM image (via `vagrant ssh`, as mentioned above),
-you'll get a prompt.
-
-To start working on the very first exercise image, simply type in the following command:
+Inside the VM or container, run:
 
 ```bash
 exercise 1
 ```
 
-and you should start seeing something like this:
+This will download `xp-infected.vmem` into `~/images/exercise01/` and open a shell in that folder.
 
-[![asciicast](https://asciinema.org/a/oxP3X8ZkwSIYyZ1nuevrw9YyS.png)](https://asciinema.org/a/oxP3X8ZkwSIYyZ1nuevrw9YyS)
+* See [`report/report.md`](report/report.md) for a comprehensive sample forensic report analyzing `exercise 1`.
+
+---
+
+## Credits
+
+* **Author & Instructor**: [Václav Lorenc](https://github.com/valorcz)
+* **Dockerization & Multi-Platform Support**: Special thanks to [Adam Ivora](https://github.com/adamivora) for contributing the initial Docker configurations and containerization setup.

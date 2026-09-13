@@ -19,23 +19,23 @@ Vagrant.configure("2") do |config|
 
   # Apple Silicon/aarch64: This setup is specific for aarch64 platforms
   #                        so that we don't need to emulate x86_64
-
   if arch == "arm64"
-    # puts 'Provisioning arm64 code'
-
     config.vm.box_architecture = "arm64"
 
     config.vm.provider "qemu" do |qe|
-     qe.arch = "aarch64"
-     qe.ssh_port = "50024"
-     qe.cpu = "max"
+      qe.arch = "aarch64"
+      qe.ssh_port = "50024"
+      qe.cpu = "max"
+      qe.memory = "4096M"
+      qe.smp = "2"
     end
   end
 
   # Specific Vagrant configuration for Virtualbox
+  # Note: Memory analysis and Python compilation via pyenv require at least 4096MB RAM
+  # to prevent Linux Out-Of-Memory (OOM) killer during build and image scanning.
   config.vm.provider "virtualbox" do |vb|
-     # Customize the amount of memory on the VM:
-     vb.memory = "1024"
+     vb.memory = "4096"
      vb.cpus = "2"
      # Try to prevent vbguest upgrade issues
      if Vagrant.has_plugin?("vagrant-vbguest")
@@ -43,8 +43,11 @@ Vagrant.configure("2") do |config|
      end
   end
 
+  # Note: rsync synced folders sync host -> guest on boot.
+  # Run 'vagrant rsync-auto' if you want continuous synchronization while working.
+  # If ./symbols exists on the host, it syncs into /vagrant/symbols for offline Volatility 3 support.
   config.vm.synced_folder ".", "/vagrant", type: "rsync",
-    rsync__exclude: [".git/", "images", "samples", "slides", "symbols"]
+    rsync__exclude: [".git/", "images", "samples", "slides", "build/"]
 
   # View the documentation for the provider you are using for more
   # information on available options.

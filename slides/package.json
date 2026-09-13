@@ -1,0 +1,16 @@
+{
+  "name": "pv204-in-memory-malware-analysis-slides",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Slidev presentation for PV204 In-Memory Malware Analysis",
+  "scripts": {
+    "dev": "slidev --open",
+    "build": "slidev build",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@slidev/cli": "^52.19.1",
+    "@slidev/theme-default": "^0.25.0",
+    "slidev-theme-tahta": "^0.13.3"
+  }
+}

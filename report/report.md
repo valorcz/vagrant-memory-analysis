@@ -63,13 +63,20 @@ We'll be dealing with WinXP image, Service Pack 3, running on `x86` platform.
 exercise01$ vol -f xp-infected.vmem pslist
 ```
 
-returns a list of processes, which some could be raising concerns -- especially
-`cmd.exe` and `wind32dd.exe`.
+returns a list of processes, among which some immediately raise questions -- especially
+`cmd.exe` and `win32dd.exe`:
 
 ```
 0x022d3c10 cmd.exe                 972 True   True   True     True   True  True    True
 0x0216d228 win32dd.exe            1120 True   True   True     True   True  True    True
 ```
+
+> **Forensic Note (The "Heisenberg Effect" in Memory Acquisition):**
+> Notice `win32dd.exe` running under `cmd.exe`. In digital forensics, the acquisition
+> tool inevitably modifies the state of the target system when capturing live memory.
+> Here, `win32dd.exe` is MoonSols Win32dd—a popular physical memory acquisition tool
+> used by incident responders. Its presence confirms that an investigator acquired
+> the memory dump interactively from the command line.
 
 Before we proceed with further steps though, we can review other Volatility
 commands outputs to either gain more confidence in our hypothesis, or correct
@@ -79,15 +86,14 @@ it if needed.
 exercise01$ vol -f xp-infected.vmem psxview
 ```
 
-doesn't reveal anything new or suspicious.
+doesn't reveal hidden/unlinked processes (DKOM).
 
 ```bash
 exercise01$ vol -f xp-infected.vmem pstree
 ```
 
-however suggests that `WORDPAD.EXE` doesn't have any parent (the parent process
-has either terminated or something else has happened), so we have no idea
-how it was started.
+however suggests that `WORDPAD.EXE` doesn't have an active parent (the parent process
+`1204` has already terminated), leaving it orphaned:
 
 ```
  0x82088a78:WORDPAD.EXE                               320   1204      2     98 2011-04-10 21:08:40 UTC+0000
@@ -96,19 +102,25 @@ how it was started.
 .. 0x81f6d228:win32dd.exe                            1120    972      1     22 2011-04-10 21:29:24 UTC+0000
 ```
 
-Also, `pstree` command visualized that `win32dd.exe` was executed from `cmd.exe`,
-which could be important.
+`pstree` also confirms that `win32dd.exe` was executed from `cmd.exe` during memory acquisition.
+
+We can also verify whether any process contains injected code or unmapped executable
+allocations (`PAGE_EXECUTE_READWRITE`) using `malfind`:
+
+```bash
+exercise01$ vol -f xp-infected.vmem malfind
+```
 
 ### Brief Processes Summary
 
-We have identified a few possibly suspicious processes so far:
+We have identified the following noteworthy processes so far:
 
 | Process Name   | ProcessID   | ParentProcessID | Description            |
 | -------------- | ----------: | --------------: | ---------------------- |
-| `WORDPAD.EXE`  | `320`       |          `1204` | Word-like editor       |
-| `cmd.exe`      | `972`       |          `1956` | command-line           |
-| `win32.dd`     | `1120`      |           `972` | to-be-analyzed         |
-| \<unknown\>    | `1204`      |             n/a | unknown parent process |
+| `WORDPAD.EXE`  | `320`       |          `1204` | Word editor displaying decoy document |
+| `cmd.exe`      | `972`       |          `1956` | Command-line used by incident responder |
+| `win32dd.exe`  | `1120`      |           `972` | MoonSols memory acquisition tool (responder artifact) |
+| \<unknown\>    | `1204`      |             n/a | Terminated dropper process that spawned `WORDPAD.EXE` |
 
 ## Network Communication
 
@@ -242,20 +254,33 @@ We can probably start constructing a preliminary hypothesis:
 
 ## Files Analysis
 
-> **TO-BE-IMPROVED**
-
 ```bash
 exercise01$ vol -f xp-infected.vmem dumpfiles -D dump -Q 0x00000000024a5840
 ```
 
-The command `dumpfiles` allows us to extract a file (or what's present from the
-file in the RAM) to our folder. Could be useful for a further reverse engineering,
-forensic analysis, etc.
+The command `dumpfiles` extracts the cached memory file object to our output directory:
 
 ```
 DataSectionObject 0x024a5840   None   \Device\HarddiskVolume1\DOCUME~1\unclebob\Desktop\document.doc
 ```
 
+Volatility extracts this object as `dump/file.None.0x824a5840.dat`. We can check its integrity and type using standard Linux tools:
+
+```bash
+exercise01$ file dump/file.None.0x824a5840.dat
+dump/file.None.0x824a5840.dat: Rich Text Format data, version 1, ANSI
+
+exercise01$ md5sum dump/file.None.0x824a5840.dat
+dae329b01159385eef29f6d1416f2f27  dump/file.None.0x824a5840.dat
+```
+
+Even though named `document.doc` on `unclebob`'s Desktop, the magic bytes reveal it is actually an **RTF** (Rich Text Format) file. We can examine it further with `rtfobj` (part of the pre-installed `oletools` package):
+
+```bash
+exercise01$ rtfobj dump/file.None.0x824a5840.dat
+```
+
+`rtfobj` reveals embedded exploit objects (consistent with known RTF parser vulnerabilities such as CVE-2010-3333). When opened, the file displays a decoy text in Wordpad while the dropper executes payload code in the background.
 
 ## Forensic Analysis
 
@@ -271,7 +296,7 @@ in the default Volatility distro. It can be found at [github repository][prefetc
 Good news is that it doesn't require any fixing or updates :)
 
 ```bash
-exercise01$ vol -f xp-infected.vmem prefetchparser
+exercise01$ vol -f xp-infected.vmem prefetchparser
 ```
 
 will provide us with some super-useful extra information -- we've found a new
@@ -285,74 +310,107 @@ POST_EXPRESS_LABEL.EXE-1FE60565.pf         2011-04-10 21:08:32 UTC+0000     1   
 
 ### Strings Analysis
 
-TBD
+Rather than running `strings` indiscriminately over the entire multi-gigabyte dump, we can perform targeted extraction targeting Unicode (16-bit little endian, `-e l`) and ASCII strings associated with our discovered indicators:
+
+```bash
+exercise01$ strings -a -e l xp-infected.vmem | grep -i "mialepromo"
+http://mialepromo.ru/load.php?id=...
+```
+
+Inspecting the surrounding memory reveals HTTP request headers:
+
+```http
+GET /load.php?id=... HTTP/1.1
+Accept: */*
+User-Agent: Our_Agent
+Host: mialepromo.ru
+Cache-Control: no-cache
+```
+
+This confirms that the downloader client used a hardcoded, non-standard HTTP header `User-Agent: Our_Agent`.
 
 ## Final Hypothesis
 
-TBD.
+Based on the correlated memory artifacts, the incident unfolded as follows:
+
+1. **Initial Vector**: The victim user (`unclebob`) received and executed an executable named `POST_EXPRESS_LABEL.EXE` (likely masquerading as a postal delivery notification).
+2. **Decoy & Dropping**: At `21:08:32 UTC`, `POST_EXPRESS_LABEL.EXE` executed. It dropped a decoy file `document.doc` onto the desktop (`C:\Documents and Settings\unclebob\Desktop\document.doc`) and spawned `WORDPAD.EXE` (PID 320) at `21:08:40 UTC` to distract the victim.
+3. **C2 Resolution & Download**: The dropper process (PID 1204) queried DNS for `mialepromo.ru` (cached as `91.199.75.77` and `91.199.75.14`) and established an HTTP connection to download secondary malware payloads using `User-Agent: Our_Agent`. Having completed its routine, PID 1204 exited, leaving `WORDPAD.EXE` orphaned without an active parent process.
+4. **Backdoor Persistence**: Concurrently, at `21:08:37 UTC`, a service process (`svchost.exe`, PID 1056) opened a listening socket on `1031/udp`, likely serving as a remote backdoor or botnet control channel.
+5. **Memory Acquisition**: At `21:28:24 UTC`, an investigator opened `cmd.exe` (PID 972) and ran `win32dd.exe` (PID 1120) at `21:29:24 UTC` to dump volatile memory, completing the capture at `21:29:25 UTC`.
 
 ### Timeline
 
-Fortunately we have a few timestamps collected during the analysis process.
-
 | Timestamp (UTC)      | Information                                            |
 | -------------------  | ------------------------------------------------------ |
-| `2011-04-10 21:08:32`| Prefetch record for `Post_Express_Label.exe` was created. |
-| `2011-04-10 21:08:37`| `svchost.exe (1056)` started listening on a UDP port. |
-| `2011-04-10 21:08:40`| `wordpad.exe (320)` process was started.              |
-
+| `2011-04-10 21:08:32`| Prefetch record for `POST_EXPRESS_LABEL.EXE` created (malware execution). |
+| `2011-04-10 21:08:37`| `svchost.exe (1056)` started listening on `1031/udp`.   |
+| `2011-04-10 21:08:40`| `WORDPAD.EXE (320)` started to display decoy document.  |
+| `2011-04-10 21:28:24`| `cmd.exe (972)` launched by incident responder.        |
+| `2011-04-10 21:29:24`| `win32dd.exe (1120)` executed to capture RAM dump.      |
+| `2011-04-10 21:29:25`| Memory image acquisition completed.                   |
 
 ### Indicators
 
 | IndicatorType  | Value                              | Comment                                    |
 | -------------- | ---------------------------------- | -------------------------------------------------- |
-| `ip-address`   |                    `91.199.75.77`  | Used for downloading of various stages of the malware. |  
-| `ip-address`   |                    `91.199.75.14`  | Not used directly, but it's an alternate IP of a malicious domain below. |
-| `domain`       |                    `mialepromo.ru` | DNS name most likely bound to the address above, used for downloading of various stages of the malware. |
-| `user-agent`   |                        `Our_Agent` | user-agent identification used for the malware downloads. |
-| `filename`     |           `Post_Express_Label.exe` | Filename of the original malware file. |
-| `md5`          | `dae329b01159385eef29f6d1416f2f27` | A document dropped by the malware. |
+| `ip-address`   |                    `91.199.75.77`  | Used for downloading various stages of the malware. |  
+| `ip-address`   |                    `91.199.75.14`  | Alternate IP resolved for malicious domain. |
+| `domain`       |                    `mialepromo.ru` | C2 domain used for payload staging. |
+| `user-agent`   |                        `Our_Agent` | Custom User-Agent header used in HTTP requests. |
+| `filename`     |           `POST_EXPRESS_LABEL.EXE` | Original malicious executable name. |
+| `md5`          | `dae329b01159385eef29f6d1416f2f27` | Decoy RTF document dropped by malware. |
 
 ### Signatures
 
 #### Yara Signatures
 
-For any kind of future incidents, we prepared the following Yara signatures:
+For triage across memory dumps and raw disk files, we prepared the following YARA rules:
 
-```yaml
+```yara
 rule pv204_suspicious_domain {
   meta:
-    description =  "Detects our very suspicious domain"
+    description = "Detects mialepromo.ru C2 domain in process memory"
     author = "Vasek Lorenc"
     date = "2020-04-29"
+    reference = "PV204 exercise01"
   strings:
-    $env1 = /mialepromo.ru/
+    $domain = "mialepromo.ru" ascii wide nocase
   condition:
-    any of them
+    $domain
 }
 
 rule pv204_suspicious_agent {
   meta:
-    description =  "Detects our very suspicious agent"
+    description = "Detects Our_Agent malware User-Agent header"
     author = "Vasek Lorenc"
     date = "2020-04-29"
+    reference = "PV204 exercise01"
   strings:
-    $env1 = /Our_Agent/
+    $ua = "Our_Agent" ascii wide nocase
   condition:
-    any of them
+    $ua
 }
 ```
 
 #### Suricata Signatures
 
-Signatures for the possible DNS communication (malicious domains resolution),
-plus signatures for the HTTP scheme.
+Signatures for monitoring malicious DNS resolution and HTTP communications:
 
-> The latter won't be useful much these days, as majority of HTTP traffic is
-> actually HTTPS, encrypted. Even malware and botnets are now switching to
-> HTTPS, as it allows them to stay hidden from the plain sight.
+```suricata
+# Detect DNS query for the C2 domain
+alert dns $HOME_NET any -> any 53 (msg:"PV204 - Suspicious DNS Query to mialepromo.ru"; dns.query; content:"mialepromo.ru"; nocase; endswith; reference:url,https://github.com/valorcz/vagrant-memory-analysis; classtype:trojan-activity; sid:1000001; rev:1;)
+
+# Detect HTTP traffic with malware-specific User-Agent
+alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"PV204 - Suspicious User-Agent (Our_Agent)"; flow:established,to_server; http.user_agent; content:"Our_Agent"; depth:9; reference:url,https://github.com/valorcz/vagrant-memory-analysis; classtype:trojan-activity; sid:1000002; rev:1;)
+```
 
 # Further Reading
+
+* [Volatility 2 vs. Volatility 3 Forensic Rosetta Stone](../doc/volatility-rosetta-stone.md)
+* [PV204 Workshop Documentation][pv204-workshop]
+* [dnscache Plugin Repository][dnscache-plugin]
+* [prefetchparser Plugin Repository][prefetchparser]
 
 [pv204-workshop]: https://github.com/valorcz/vagrant-memory-analysis/blob/master/README.md
 [dnscache-plugin]: https://github.com/mnemonic-no/dnscache

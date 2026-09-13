@@ -1,2 +1,4 @@
 .vagrant
 *.pyc
+slides/node_modules/
+slides/dist/

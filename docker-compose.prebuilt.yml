@@ -1,10 +1,8 @@
 ---
 services:
   pv204_memory_analysis:
-    image: valorcz/pv204_memory_analysis
+    image: valorcz/pv204_memory_analysis:latest
     container_name: memory_analysis
-    # platform: linux/amd64
-    build: .
     volumes:
       - data:/opt/vagrant
       - ./symbols:/home/vagrant/.local/share/volatility3/symbols:ro

@@ -1,0 +1,278 @@
+/* ==========================================================================
+   PV204 Slidev Custom Styles & Theme Inheritance
+   Supports dark variants (editorial, brutalist, boardroom, atelier, lagoon, signal)
+   and light variants (soft, minimal, paper, notebook, press, muse, poster).
+   ========================================================================== */
+
+/* ---------- Semantic Tones (Dark Defaults) ---------- */
+:root {
+  --tone-sky: #38bdf8;
+  --tone-cyan: #22d3ee;
+  --tone-emerald: #34d399;
+  --tone-teal: #2dd4bf;
+  --tone-amber: #fbbf24;
+  --tone-orange: #fb923c;
+  --tone-rose: #fb7185;
+  --tone-purple: #c084fc;
+}
+
+/* ---------- Semantic Tones (Light Variants) ---------- */
+:root[data-variant='soft'],
+:root[data-variant='minimal'],
+:root[data-variant='paper'],
+:root[data-variant='notebook'],
+:root[data-variant='press'],
+:root[data-variant='muse'],
+:root[data-variant='poster'] {
+  --tone-sky: #0369a1;
+  --tone-cyan: #0e7490;
+  --tone-emerald: #047857;
+  --tone-teal: #0f766e;
+  --tone-amber: #b45309;
+  --tone-orange: #c2410c;
+  --tone-rose: #be123c;
+  --tone-purple: #6d28d9;
+}
+
+/* ---------- Consistent Top Alignment for Lecture Content Slides ---------- */
+.slidev-layout.l-topic .l-head {
+  text-align: left !important;
+  align-self: flex-start !important;
+  width: 100% !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.slidev-layout.l-topic .l-head h2,
+.slidev-layout.l-topic .l-head .fs-h2 {
+  text-align: left !important;
+}
+
+.slidev-layout.l-topic .l-head .kicker {
+  justify-content: flex-start !important;
+}
+
+/* Ensure slide body starts immediately below the header instead of vertically centering */
+.slidev-layout.l-topic .l-head + .l-body {
+  justify-content: flex-start !important;
+}
+
+.slidev-layout.l-topic .l-head + .l-body .fit {
+  justify-content: flex-start !important;
+}
+
+.slidev-layout.l-topic .l-head + .l-body .fit-inner {
+  transform-origin: top left !important;
+}
+
+.slidev-layout.l-topic .two-cols-fit {
+  justify-content: flex-start !important;
+}
+
+/* ---------- Monospace & Code Legibility (Universal & Variant-Aware) ---------- */
+
+/* Ensure true font and weight are applied, bypassing Slidev's font-light 300 reset */
+.slidev-layout code,
+.slidev-layout kbd,
+.slidev-layout samp,
+.slidev-layout pre,
+.slidev-layout .font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-feature-settings: "liga" 0 !important;
+}
+
+/* Inline code pills across all slides (paragraphs, lists, tables) */
+.slidev-layout :not(pre) > code,
+.slidev-layout code:not(pre code) {
+  font-size: 0.88em !important;
+  font-weight: 600 !important;
+  padding: 0.15em 0.45em !important;
+  border-radius: var(--radius-sm, 6px) !important;
+  letter-spacing: -0.01em !important;
+  display: inline-block;
+  line-height: 1.35;
+}
+
+/* Dark theme variants: glowing accent code pill */
+.slidev-layout :not(pre) > code,
+.slidev-layout code:not(pre code) {
+  background-color: color-mix(in srgb, var(--ink-2) 90%, white 10%) !important;
+  color: var(--accent, #7aa2ff) !important;
+  border: var(--rule-w, 1px) solid color-mix(in srgb, var(--line) 80%, transparent) !important;
+}
+
+/* Light theme variants (soft, minimal, paper, notebook, press, muse, poster):
+   Fixes the black-on-black bug by giving inline code a clean tinted pill with deep solid slate text (14:1 contrast) */
+:root[data-variant='soft'] .slidev-layout :not(pre) > code,
+:root[data-variant='soft'] .slidev-layout code:not(pre code),
+:root[data-variant='minimal'] .slidev-layout :not(pre) > code,
+:root[data-variant='minimal'] .slidev-layout code:not(pre code),
+:root[data-variant='paper'] .slidev-layout :not(pre) > code,
+:root[data-variant='paper'] .slidev-layout code:not(pre code),
+:root[data-variant='notebook'] .slidev-layout :not(pre) > code,
+:root[data-variant='notebook'] .slidev-layout code:not(pre code),
+:root[data-variant='press'] .slidev-layout :not(pre) > code,
+:root[data-variant='press'] .slidev-layout code:not(pre code),
+:root[data-variant='muse'] .slidev-layout :not(pre) > code,
+:root[data-variant='muse'] .slidev-layout code:not(pre code),
+:root[data-variant='poster'] .slidev-layout :not(pre) > code,
+:root[data-variant='poster'] .slidev-layout code:not(pre code) {
+  background-color: color-mix(in srgb, var(--line) 45%, var(--ink)) !important;
+  color: #0f172a !important; /* Rich deep slate for razor-sharp legibility */
+  border: var(--rule-w, 1px) solid color-mix(in srgb, var(--line) 80%, black 20%) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Presentation Tables (Cheat sheets, Mutexes, Comparison tables) */
+.slidev-layout table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem !important;
+  margin-top: 0.5rem;
+}
+
+.slidev-layout thead th {
+  padding: 0.35rem 0.65rem !important;
+  font-size: 0.72rem !important;
+  border-bottom: var(--rule-w, 1px) solid var(--line) !important;
+}
+
+.slidev-layout tbody td {
+  padding: 0.45rem 0.65rem !important;
+  border-bottom: 1px solid var(--line) !important;
+  line-height: 1.4 !important;
+}
+
+.slidev-layout table td code {
+  white-space: nowrap !important;
+  font-weight: 600 !important;
+}
+
+/* Code blocks (<pre>) in Light Variants:
+   Ensure code blocks render as sleek dark terminal containers with vibrant syntax highlighting */
+:root[data-variant='soft'] .slidev-layout pre,
+:root[data-variant='minimal'] .slidev-layout pre,
+:root[data-variant='paper'] .slidev-layout pre,
+:root[data-variant='notebook'] .slidev-layout pre,
+:root[data-variant='press'] .slidev-layout pre,
+:root[data-variant='muse'] .slidev-layout pre,
+:root[data-variant='poster'] .slidev-layout pre {
+  background-color: #0f141c !important;
+  color: #f8fafc !important;
+  border: 1px solid #283344 !important;
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.18) !important;
+}
+
+:root[data-variant='soft'] .slidev-layout pre code,
+:root[data-variant='minimal'] .slidev-layout pre code,
+:root[data-variant='paper'] .slidev-layout pre code,
+:root[data-variant='notebook'] .slidev-layout pre code,
+:root[data-variant='press'] .slidev-layout pre code,
+:root[data-variant='muse'] .slidev-layout pre code,
+:root[data-variant='poster'] .slidev-layout pre code {
+  color: inherit !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* ---------- Adaptive Color Classes in Light Theme Variants ---------- */
+:root[data-variant='soft'] .text-sky-400,
+:root[data-variant='minimal'] .text-sky-400,
+:root[data-variant='paper'] .text-sky-400,
+:root[data-variant='notebook'] .text-sky-400,
+:root[data-variant='press'] .text-sky-400,
+:root[data-variant='muse'] .text-sky-400,
+:root[data-variant='poster'] .text-sky-400 {
+  color: var(--tone-sky) !important;
+}
+
+:root[data-variant='soft'] .text-cyan-400,
+:root[data-variant='minimal'] .text-cyan-400,
+:root[data-variant='paper'] .text-cyan-400,
+:root[data-variant='notebook'] .text-cyan-400,
+:root[data-variant='press'] .text-cyan-400,
+:root[data-variant='muse'] .text-cyan-400,
+:root[data-variant='poster'] .text-cyan-400 {
+  color: var(--tone-cyan) !important;
+}
+
+:root[data-variant='soft'] .text-emerald-400,
+:root[data-variant='minimal'] .text-emerald-400,
+:root[data-variant='paper'] .text-emerald-400,
+:root[data-variant='notebook'] .text-emerald-400,
+:root[data-variant='press'] .text-emerald-400,
+:root[data-variant='muse'] .text-emerald-400,
+:root[data-variant='poster'] .text-emerald-400 {
+  color: var(--tone-emerald) !important;
+}
+
+:root[data-variant='soft'] .text-teal-400,
+:root[data-variant='minimal'] .text-teal-400,
+:root[data-variant='paper'] .text-teal-400,
+:root[data-variant='notebook'] .text-teal-400,
+:root[data-variant='press'] .text-teal-400,
+:root[data-variant='muse'] .text-teal-400,
+:root[data-variant='poster'] .text-teal-400 {
+  color: var(--tone-teal) !important;
+}
+
+:root[data-variant='soft'] .text-amber-400,
+:root[data-variant='minimal'] .text-amber-400,
+:root[data-variant='paper'] .text-amber-400,
+:root[data-variant='notebook'] .text-amber-400,
+:root[data-variant='press'] .text-amber-400,
+:root[data-variant='muse'] .text-amber-400,
+:root[data-variant='poster'] .text-amber-400 {
+  color: var(--tone-amber) !important;
+}
+
+:root[data-variant='soft'] .text-orange-400,
+:root[data-variant='minimal'] .text-orange-400,
+:root[data-variant='paper'] .text-orange-400,
+:root[data-variant='notebook'] .text-orange-400,
+:root[data-variant='press'] .text-orange-400,
+:root[data-variant='muse'] .text-orange-400,
+:root[data-variant='poster'] .text-orange-400 {
+  color: var(--tone-orange) !important;
+}
+
+:root[data-variant='soft'] .text-rose-400,
+:root[data-variant='minimal'] .text-rose-400,
+:root[data-variant='paper'] .text-rose-400,
+:root[data-variant='notebook'] .text-rose-400,
+:root[data-variant='press'] .text-rose-400,
+:root[data-variant='muse'] .text-rose-400,
+:root[data-variant='poster'] .text-rose-400 {
+  color: var(--tone-rose) !important;
+}
+
+:root[data-variant='soft'] .text-purple-400,
+:root[data-variant='minimal'] .text-purple-400,
+:root[data-variant='paper'] .text-purple-400,
+:root[data-variant='notebook'] .text-purple-400,
+:root[data-variant='press'] .text-purple-400,
+:root[data-variant='muse'] .text-purple-400,
+:root[data-variant='poster'] .text-purple-400 {
+  color: var(--tone-purple) !important;
+}
+
+:root[data-variant='soft'] .text-white,
+:root[data-variant='minimal'] .text-white,
+:root[data-variant='paper'] .text-white,
+:root[data-variant='notebook'] .text-white,
+:root[data-variant='press'] .text-white,
+:root[data-variant='muse'] .text-white,
+:root[data-variant='poster'] .text-white {
+  color: var(--fg) !important;
+}
+
+:root[data-variant='soft'] .border-white\/10,
+:root[data-variant='minimal'] .border-white\/10,
+:root[data-variant='paper'] .border-white\/10,
+:root[data-variant='notebook'] .border-white\/10,
+:root[data-variant='press'] .border-white\/10,
+:root[data-variant='muse'] .border-white\/10,
+:root[data-variant='poster'] .border-white\/10 {
+  border-color: var(--line) !important;
+}

@@ -4,21 +4,17 @@
 ##############################
 
 function prepare_system_packages() {
-  sudo dnf update -y
-  # We may need to restart after, not sure how to make this happen
+  dnf update -y
 
   # Additional repos: EPEL
-  sudo dnf install epel-release -y
-  sudo dnf config-manager --set-enabled epel
+  dnf install epel-release -y
+  dnf config-manager --set-enabled epel
 
-  # This, however, may install a plenty of unnecessary packages,
-  # I may need to cut it down to speed up the builds
-  sudo dnf group install -y "Development Tools"
+  dnf group install -y "Development Tools"
   
-  # We are missing yara-devel, may or may not be a problem
-  sudo dnf install -y libffi-devel zlib zlib-devel bzip2-devel openssl-devel sqlite-devel readline-devel \
-                      libjpeg-turbo-devel unzip yara cabextract bzip2 p7zip radare2 strace \
-                      git glibc-langpack-en glibc-locale-source
+  dnf install -y libffi-devel zlib zlib-devel bzip2-devel openssl-devel sqlite-devel readline-devel \
+                 libjpeg-turbo-devel unzip yara cabextract bzip2 p7zip radare2 strace \
+                 git glibc-langpack-en glibc-locale-source
 }
 
 # pyenv installation, due to Volatility,
@@ -137,6 +133,13 @@ function setup_environment() {
 
   # In case we need them, but mostly we don't
   setup_yara_signatures
+
+  # Ensure Volatility 3 symbols mountpoint exists
+  setup_volatility3_symbols
+}
+
+function setup_volatility3_symbols() {
+  mkdir -p "${HOME}/.local/share/volatility3/symbols"
 }
 
 export PATH="~/.pyenv/bin:$PATH"
