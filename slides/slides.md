@@ -128,6 +128,7 @@ title: Memory Architecture
 subtitle: How Operating Systems Organize Physical & Virtual RAM
 index: 01
 kicker: Section 1
+bg: /images/monty-python-architecture.jpg
 ---
 
 ---
@@ -337,6 +338,7 @@ title: OS Internals & DKOM
 subtitle: Processes, Kernel Structures, and Rootkit Evasion
 index: 02
 kicker: Section 2
+bg: /images/monty-python-dkom.jpg
 ---
 
 ---
@@ -508,10 +510,11 @@ layout: bigtype
 title: "And Now for Something Completely Practical..."
 subtitle: "The formal architecture theory is behind us. Now we move from hardware physics to the battlefield: acquisition mechanics, rootkits, and real-world triage."
 kicker: Intermission · Monty Python Edition
+bg: /images/monty-python-intermission.jpg
 glow: true
 ---
 
-<div class="mt-8 flex items-center justify-center gap-3 text-slate-400 italic text-base">
+<div class="mt-8 flex items-center justify-center gap-3 text-slate-300 italic text-base drop-shadow-md">
   <span class="text-amber-400 font-bold not-italic">Scene:</span>
   <span>"And now for something completely different: A forensic analyst with a raw RAM dump."</span>
 </div>
@@ -577,6 +580,7 @@ title: Memory Acquisition
 subtitle: Live Seizure Physics, Hypervisors & Footprint Mitigation
 index: 03
 kicker: Section 3
+bg: /images/monty-python-acquisition.jpg
 ---
 
 ---
@@ -715,6 +719,7 @@ title: Forensic Triage Tools
 subtitle: Redline, HBGary DDNA, Volatility 3, and MemProcFS
 index: 04
 kicker: Section 4
+bg: /images/monty-python-triage.jpg
 ---
 
 ---
@@ -1203,6 +1208,7 @@ title: Forensic Methodology & OpSec
 subtitle: Investigation Hygiene, Safe Handling & AI-Augmented DFIR
 index: 05
 kicker: Section 5
+bg: /images/monty-python-opsec.jpg
 ---
 
 ---
@@ -1346,6 +1352,7 @@ title: "Day 2: Hands-on Malware Labs"
 subtitle: Practical Memory Forensics with Volatility
 index: 06
 kicker: Workshop Session
+bg: /images/monty-python-labs.jpg
 ---
 
 ---
@@ -1638,6 +1645,7 @@ layout: section
 title: "Appendix: Advanced Architecture"
 subtitle: Deep-Dive into ARM64 Paging & Translation Hardware
 kicker: Optional Reference
+bg: /images/monty-python-appendix.jpg
 ---
 
 ---
