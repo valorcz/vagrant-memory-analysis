@@ -1,9 +1,9 @@
 ---
 theme: slidev-theme-tahta
 title: "PV204: In-Memory Malware Analysis"
-info: "PV204 Security Technologies, Masaryk University"
+info: PV204 Security Technologies, Masaryk University
 themeConfig:
-  variant: boardroom
+  variant: "boardroom"
 layout: cover
 kicker: Masaryk University · Faculty of Informatics
 subtitle: Hands-on Memory Forensics & Incident Response — Václav Lorenc
@@ -14,28 +14,31 @@ layout: agenda
 title: Course Agenda
 kicker: PV204 Overview
 items:
-  - { topic: Motivation & Legal Evidence, desc: "Why volatile memory forensics beats static disk analysis" }
-  - { topic: Operating System Internals, desc: "Processes, threads, paging & kernel data structures" }
-  - { topic: Subverting the OS (DKOM), desc: "Rootkit mechanics, process injection & unbacked memory" }
-  - { topic: Acquisition Physics, desc: "Live hardware seizure, hypervisors & Heisenberg effect" }
-  - { topic: Forensic Triage Tools, desc: "Redline, HBGary DDNA, Volatility 3, MemProcFS" }
-  - { topic: Hands-on Malware Labs, desc: "Real-world memory triage: Zeus, Conficker, and Bob samples" }
+  - { topic: "Motivation & Evidence Dynamics", desc: "Why volatile memory forensics beats static disk analysis" }
+  - { topic: "Operating System Internals", desc: "Processes, threads, paging & kernel data structures" }
+  - { topic: "Subverting the OS (DKOM)", desc: "Rootkit mechanics, process injection & unbacked memory" }
+  - { topic: "Acquisition Physics", desc: "Live hardware seizure, hypervisors & Heisenberg effect" }
+  - { topic: "Forensic Triage Tools", desc: "Redline, HBGary DDNA, Volatility 3, MemProcFS" }
+  - { topic: "Hands-on Malware Labs", desc: "Real-world memory triage: Zeus, Conficker, and Bob samples" }
 ---
 
 ---
-layout: image
-image: /images/xkcd-update.png
-side: right
+layout: two-cols
 title: Why Memory Analysis?
 kicker: The Human Factor
 ---
 
-* **The Patching Reality**
-  * Critical patches fix severe vulnerabilities...
-  * Yet users reflexively click *"Remind me later"*.
-* **Why We Need Volatile Forensics**
-  * Systems remain unpatched in production for months.
-  * When perimeter security fails, memory holds the truth.
+**The Patching Paradox**
+* Critical security patches fix severe vulnerabilities...
+* Yet production users reflexively hit *"Remind me later"*.
+
+**Why We Need Volatile Forensics**
+* Systems linger unpatched in enterprise fleets for months.
+* When perimeter defenses fail, RAM preserves the running truth.
+
+::right::
+
+<ComicCard src="/images/xkcd-update.png" alt="XKCD #1328" />
 
 <!--
 XKCD #1328: https://xkcd.com/1328/
@@ -43,28 +46,44 @@ What’s the real cause of all the security issues on laptops and desktops? This
 -->
 
 ---
-layout: panels
-title: Why Memory Analysis?
-kicker: Core Motivations
-panels:
-  - { icon: "lucide:scale", title: Legal & Corporate Evidence, items: ["Establishes root cause & timeline", "Proves unauthorized execution", "Court-admissible adversary state"] }
-  - { icon: "lucide:unlock", title: Bypass Anti-Reversing, items: ["Code runs in plaintext in RAM", "Packers & crypters are defeated", "Exposes dynamically resolved APIs"] }
-  - { icon: "lucide:zap", title: Fast Incident Triage, items: ["Captures fileless / in-memory implants", "RAM (8–64 GB) is fast to analyze", "Preserves volatile network connections"] }
+layout: two-cols
+title: The Power of Volatile Data
+kicker: Volatile vs. Static Truth
 ---
 
+### <strong class="text-emerald-400 font-bold">Ephemeral & Volatile Data</strong>
+* **Never Touches Disk**: Unsaved documents, web chat sessions, clipboard buffers.
+* **Transient Evidence**: Vanishes the moment power is cut — must be seized live.
+
+### <strong class="text-cyan-400 font-bold">Real-Time Execution State</strong>
+* **Live Sockets**: Established TCP/UDP sessions, DNS cache, and listening ports.
+* **Process Truth**: Shows what is *actually* executing in RAM vs. static disk binaries.
+
+::right::
+
+### <strong class="text-amber-400 font-bold">Bypassing Encryption Barriers</strong>
+* **Plaintext Keys in RAM**: BitLocker (FVEK), VeraCrypt, and LUKS master keys.
+* **Pre-Encryption Buffers**: Plaintext SSL/TLS traffic before HTTPS encapsulation.
+
+### <strong class="text-rose-400 font-bold">Unmasking Stealthy Rootkits</strong>
+* **Hidden Processes**: Malware that unlinks itself from OS reporting structures to evade Task Manager.
+* **In-Memory Evasion**: Code injection, process hollowing, and payloads executed directly in RAM.
+
 ---
-layout: image
-image: /images/xkcd-heartbleed.png
-side: right
+layout: two-cols
 title: Secrets Trapped in RAM
-kicker: Volatile Vulnerabilities
 ---
 
-* **The Scope of Memory Exposure**
-  * Encryption keys, TLS session tickets, private communications.
-  * In-memory caches hold plaintext credentials ().
-* **Hardware-Level Leaks**
-  * Attacks like Heartbleed, Spectre, and Meltdown bypass OS protections by harvesting data directly from volatile RAM.
+**The Scope of Memory Exposure**
+* Asymmetric private keys, TLS session tickets, active sessions.
+* In-memory process caches hold plaintext credentials (`lsass.exe`).
+
+**Hardware & Buffer Leaks**
+* Vulnerabilities like Heartbleed, Spectre, and Meltdown harvest data directly from volatile memory, leaving zero traces in disk logs.
+
+::right::
+
+<ComicCard src="/images/xkcd-heartbleed.png" alt="XKCD #1354" />
 
 <!--
 XKCD #1354: https://xkcd.com/1354/
@@ -72,65 +91,117 @@ Or you could consider Spectre/Meltdown, which still have related techniques and 
 -->
 
 ---
-layout: panels
+layout: two-cols
 title: Challenges in Reverse Engineering
-kicker: Traditional Anti-Analysis Roadblocks
-panels:
-  - { icon: "lucide:binary", title: Binary Complexity, items: ["Multiple CPU architectures (x86, x64, ARM64)", "Undocumented instructions & opaque opcodes", "Non-standard ABI behaviors"] }
-  - { icon: "lucide:bug-off", title: Anti-Debugging, items: ["SEH manipulation & hardware breakpoints", "RDTSC timing checks & PEB BeingDebugged", "User-mode API inline hooks"] }
-  - { icon: "lucide:box", title: Anti-VM & Sandbox, items: ["Instruction quirks (CPUID, SIDT, SLDT)", "Registry & driver artifact queries", "Screen resolution & human mouse checks"] }
-  - { icon: "lucide:shield-alert", title: Packers & Crypters, items: ["VMProtect, Themida, UPX packing", "Dynamic API hashing (ROR13, Murmur)", "Multi-stage payload decryption"] }
 ---
 
----
-layout: default
-title: PE File Format Overview
----
+### <strong class="text-sky-400 font-bold">Obfuscation & Dynamic Packing</strong>
+* **Packers & Crypters**: VMProtect, Themida, UPX, and multi-stage unpackers obscure static analysis.
+* **Import Obfuscation**: Dynamic API hashing (ROR13, Murmur) hides imported API calls from the IAT.
 
-<div class="flex justify-center">
-  <Figure src="/images/pe-file-format.png" caption="Ange Albertini's PE101 poster (Corkami) — DOS Header, PE Header, Optional Header, and Sections" />
-</div>
+### <strong class="text-amber-400 font-bold">Anti-Debugging Defenses</strong>
+* **Environment Traps**: RDTSC timing checks, PEB `BeingDebugged`, and hardware breakpoint clearing (`Dr0`–`Dr3`).
+* **Kernel Transitions**: Direct system calls (`syscall`) bypassing user-mode EDR hooks (`ntdll.dll`).
+
+::right::
+
+### <strong class="text-purple-400 font-bold">Anti-VM & Sandbox Evasion</strong>
+* **Hardware Artifacts**: Hypervisor CPUID signatures, SIDT/SGDT instruction quirks, and RedPill checks.
+* **Environmental Artifacts**: Screen resolutions, registry keys, MAC addresses, lack of user mouse movement.
+
+### <strong class="text-emerald-400 font-bold">Why Memory Forensics Breaks Through</strong>
+* **Execution Inevitability**: Regardless of packers, **the CPU can only execute decrypted code in RAM**.
+* **Unvarnished State**: Memory captures payloads *after* unpacking, decrypting, and resolving APIs!
+
+---
+layout: full
+title: The Complexity of Static Binaries (PE101)
+kicker: Why Memory Forensics Bypasses Static Reversing
+image: /images/pe-file-format.png
+caption: Ange Albertini's PE101 poster (Corkami) — Static reversing requires decoding hundreds of intricate header fields; memory forensics captures the payload already decrypted and ready to run.
+footer: false
+---
 
 ---
 layout: section
 title: Memory Architecture
 subtitle: How Operating Systems Organize Physical & Virtual RAM
-index: "01"
+index: 01
 kicker: Section 1
 ---
 
 ---
-layout: default
-title: x86/x64 Memory Organization
+layout: vs
+title: Physical vs. Virtual Memory
+left:
+  title: "Physical RAM (Hardware)"
+  items: ["Hardware DRAM DIMMs on motherboard","Scrambled state: OS and all processes interleave","Capacity strictly bounded by physical chips","Where volatile forensic images are seized"]
+right:
+  title: "Virtual Memory (Book Index)"
+  items: ["Private space per process (0-4 GB or 128 TB)","Process isolation prevents cross-process writes","Uniform paging in fixed 4 KB blocks","Oversubscription: backed by disk swap"]
 ---
 
-* **Physical Memory (RAM)**
-  * The actual hardware DRAM chips installed on the motherboard.
-* **Virtual Memory (The "Book Index" Model)**
-  * **Analogy**: Every process gets a book with identical page numbers (0 to 4 GB or 128 TB). But the operating system translates those logical page numbers into completely different physical shelves in the warehouse (RAM).
-  * **Isolation**: Process A cannot accidentally read or overwrite Process B's memory.
-  * **Logical > Physical**: Enabled via disk paging (swap / `pagefile.sys`).
-* **Paging vs. Segmentation**
-  * **Segmentation**: Historical model dividing memory into variable-sized segments (`CS`, `DS`, `SS`).
-  * **Paging**: Modern model dividing memory into uniform **4 KB** blocks. Zero external fragmentation.
-
-<Callout tone="info" icon="lucide:lightbulb">
-  <strong>Why Memory Analysts Care About Paging & CR3:</strong><br/>
-  Physical RAM is a raw, scrambled dump of billions of bytes. The CPU register <code>CR3</code> (Directory Table Base / <code>DTB</code>) holds the root address of the page translation table. When Volatility runs <code>imageinfo</code>, it hunts for this <code>DTB</code> pointer. <strong>Without CR3, virtual addresses cannot be resolved into running processes!</strong>
-</Callout>
-
 <!--
-A note about AArch64 / ARM64 is introduced later in the deck to contrast with x86/x64 flat and paged addressing.
+Analogy: Every process gets a book with identical page numbers. But the OS translates those logical page numbers into completely different physical shelves in the warehouse (RAM).
 -->
 
 ---
 layout: default
-title: "x86 Address Translation: Segmentation & Paging"
+title: Logical vs. Physical Address Space
 ---
 
-<div class="flex justify-center">
-  <Figure src="/images/x86-address-translation.png" caption="Complete x86 Logical to Linear (GDT) and Linear to Physical (CR3 / Page Tables) Translation Pipeline" />
-</div>
+<LogicalPhysicalMap class="w-full" />
+
+<!--
+Key Teaching Points for Logical vs. Physical Memory & Swapping:
+
+1. The Virtual Illusion:
+   - Each process (e.g. Browser, Text Editor) operates in its own private, linear address space starting at 0x00000000.
+   - Both processes can use the exact same virtual addresses (e.g. 0x00400000 for Code) without any risk of collision.
+   - Isolation: Process A cannot read or write Process B's memory because their page tables point to completely disjoint physical addresses.
+
+2. The Translation Switchboard (Page Tables & MMU):
+   - The OS maintains separate Page Tables for each process (anchored by the hardware CR3 register on x86).
+   - Every entry (PTE) maps a Virtual Page Number (VPN) to a Physical Frame Number (PFN) and holds status flags.
+   - The Valid/Present bit (V):
+     * V = 1: Page is present in physical DRAM.
+     * V = 0: Page is either unmapped or evicted to disk/swap.
+
+3. Physical Hardware Reality (DRAM & Swap/Pagefile):
+   - DRAM frames do not need to be contiguous. A continuous virtual buffer can be scattered across non-contiguous frames.
+   - Memory Overcommit & Swap: Inactive/cold pages (e.g. background browser tabs, old undo history) are flushed to disk (pagefile.sys on Windows, swap partition/file on Linux) to free RAM for active tasks.
+
+4. Page Fault Lifecycle (#PF Interrupt 14):
+   - When a process touches a virtual page with V = 0, the MMU cannot translate it and generates a CPU interrupt (Interrupt 14, #PF).
+   - The OS kernel page fault handler intercepts the trap, finds a free DRAM frame (or evicts another page to make room), reads the 4 KB page from SSD/disk into RAM, updates the PTE (V = 1, PFN = new frame), and invalidates the TLB.
+   - The CPU re-executes the faulting instruction transparently—the application never knew it paused!
+-->
+
+---
+layout: default
+title: "The Forensic Keystone: Register CR3"
+---
+
+Physical RAM is a raw, scrambled dump of billions of bytes with no visible process boundaries. How does an analyst reconstruct running processes from a flat binary dump?
+
+<Callout tone="info" icon="lucide:key" class="my-6">
+  <strong>The Directory Table Base (DTB):</strong><br/>
+  The CPU register <code>CR3</code> holds the physical base address of each process's top-level page directory. When forensic tools scan a memory dump, they hunt for valid kernel <code>CR3</code> structures. <strong>Without CR3, virtual addresses cannot be resolved into executable code or running processes!</strong>
+</Callout>
+
+* **Per-Process Page Tables**: Every process has its own CR3 pointer stored in kernel `_KPROCESS.DirectoryTableBase`.
+* **Hardware Page Walk**: The Memory Management Unit (MMU) walks 4-level page tables (`PML4` $\to$ `PDPT` $\to$ `PD` $\to$ `PT`) to translate virtual offsets to physical frames.
+
+---
+layout: default
+title: x86 Address Translation Pipeline
+---
+
+<X86Translation class="w-full" />
+
+<Callout tone="info" icon="lucide:info" class="mt-2 text-xs">
+  <strong>Why No Segmentation Adder?</strong> Modern 32-bit & 64-bit OSes (Windows & Linux) configure segments with Base = 0 (Flat Memory Model), so Logical Address == Linear Virtual Address.
+</Callout>
 
 <!--
 Page sizes in modern architectures: 4 KB (standard), 2 MB (large/huge page), 1 GB (gigabyte page), and proposed 512 GB pages.
@@ -138,32 +209,14 @@ Page sizes in modern architectures: 4 KB (standard), 2 MB (large/huge page), 1 G
 
 ---
 layout: two-cols
-title: Logical vs. Physical Address Space
-kicker: Memory Virtualization
+title: 32-bit Address Space Partitioning
 ---
 
-<Figure src="/images/logical-vs-physical-memory.png" caption="Process logical pages mapped to disjointed physical DRAM frames" />
-
-::right::
-
-<Figure src="/images/paging-tables-disk.png" caption="Page tables with valid/invalid bits backed by swap/pagefile on disk" />
-
-<!--
-Reference: https://minnie.tuhs.org/CompArch/Lectures/week06.html
-In other words, various isolated processes are multiplexed onto and share the same underlying physical memory frames.
--->
-
----
-layout: two-cols
-title: 32-bit Virtual Address Space
-kicker: Windows vs. Linux
----
-
-### Windows (Win32)
+### Windows (x86 32-bit)
 * **Default**: 2 GB User / 2 GB Kernel
 * **`/3GB` switch**: 3 GB User / 1 GB Kernel
 
-<Figure src="/images/win32-address-space.png" caption="Windows Win32 2GB/2GB vs 3GB/1GB split" />
+<AddressSpace mode="windows" class="mt-3" />
 
 ::right::
 
@@ -171,124 +224,163 @@ kicker: Windows vs. Linux
 * **Default**: 3 GB User / 1 GB Kernel
 * **`HugeMem`**: 4 GB User / 4 GB Kernel
 
-<Figure src="/images/linux-address-space.png" caption="Linux x86 3GB/1GB vs 4GB/4GB HugeMem split" />
+<AddressSpace mode="linux" class="mt-3" />
 
 ---
-layout: image
-image: /images/xkcd-pointers.png
-side: right
+layout: two-cols
+title: 64-bit Address Space Partitioning
+---
+
+### Windows 11 (x64 Canonical)
+* **Canonical Split**: 128 TB User / 128 TB Kernel
+* **Hardware Void**: ~16 Exabyte gap triggers `#GP` fault
+
+<AddressSpace mode="win64" class="mt-3" />
+
+::right::
+
+### Linux (x86_64 Kernel 5.x/6.x)
+* **Canonical Split**: 128 TB User (`TASK_SIZE_MAX`) / 128 TB Kernel
+* **Direct Mapping**: Maps all physical DRAM 1:1 (`PAGE_OFFSET`)
+
+<AddressSpace mode="linux64" class="mt-3" />
+
+<!--
+64-bit Virtual Address Space Architecture & Paging Notes:
+
+1. Canonical Addressing & The Non-Canonical Hole:
+   - Modern x86_64 / AMD64 CPUs implement 48-bit virtual addressing sign-extended to 64 bits (4-level paging).
+   - Addresses must be in canonical form: bits 47 through 63 must be identical (all 0s for User space, all 1s for Kernel space).
+   - Lower canonical range (User): 0x0000000000000000 to 0x00007FFFFFFFFFFF (128 TB).
+   - Upper canonical range (Kernel): 0xFFFF800000000000 to 0xFFFFFFFFFFFFFFFF (128 TB).
+   - The addresses in between are the "non-canonical hole" (~16 Exabytes). Any instruction attempting to dereference an address in this void is immediately trapped by the CPU MMU, generating a General Protection Fault (#GP).
+
+2. Linux TASK_SIZE_MAX:
+   - Defines the maximum virtual address accessible to user-space processes.
+   - On x86_64 with 4-level paging, TASK_SIZE_MAX is 0x00007FFFFFFFF000 (~128 TB).
+   - Any user-mode attempt to access memory at or above TASK_SIZE_MAX is blocked by hardware privilege checks, raising a SIGSEGV / page fault.
+
+3. Linux PAGE_OFFSET (Direct Physical Mapping / Lowmem):
+   - In 64-bit Linux, the kernel maps ALL available physical RAM 1:1 into kernel virtual memory starting at PAGE_OFFSET (0xFFFF888000000000 in 4-level paging).
+   - For any physical memory frame P, virt = P + PAGE_OFFSET.
+   - This direct linear mapping is critical for kernel performance and forms the backbone of memory forensics: acquisition tools (LiME) and Volatility can access physical frames directly via kernel pointers.
+
+4. 5-Level Paging (PML5 / LA57):
+   - High-end server processors (Intel Ice Lake+, AMD Zen 4+) support 57-bit virtual addressing (LA57) by adding a 5th level (PML5) to page tables.
+   - Expands canonical address space from 256 TB to 128 Petabytes (64 PB User space + 64 PB Kernel space).
+   - Physical memory bus addressing is expanded to 52 bits (up to 4 Petabytes of physical DRAM).
+   - Supported in Linux since kernel 4.14 (CONFIG_X86_5LEVEL) and Windows 11 / Windows Server with 5-level paging enabled.
+
+5. Authoritative References & Further Reading:
+   - Linux Kernel Documentation (x86_64 MM): https://www.kernel.org/doc/html/latest/arch/x86/x86_64/mm.html
+   - Linux 5-Level Paging: https://www.kernel.org/doc/html/latest/arch/x86/x86_64/5level-paging.html
+   - Microsoft Learn (Memory Limits for Windows): https://learn.microsoft.com/en-us/windows/win32/memory/memory-limits-for-windows-releases
+   - Intel 64 and IA-32 Architectures Software Developer's Manual (Vol 3A, Chap 4: Paging)
+-->
+
+---
+layout: default
 title: Memory Addresses & Pointers
-kicker: OS Fundamentals
 ---
 
-* **Virtual Pointers**
-  * , , ...
-* **Why Pointers Matter in DFIR**
-  * Windows kernel structures (, ) are connected solely by pointers (, ).
-  * Rootkits unlink pointers to evade listing APIs, but physical memory pointers don't lie.
+<div class="grid grid-cols-2 gap-8 items-center h-full -mt-2">
+
+<div>
+
+**Virtual Pointers in Userland**
+* Base addresses (`0x00400000`), stack pointers (`ESP`/`RSP`), PEB (`0x7FFE0000`).
+
+**Why Pointers Rule Memory Forensics**
+* Operating systems link running processes, loaded modules, and drivers through pointer chains in RAM.
+* Rootkits tamper with list pointers to hide from detection APIs, but raw in-memory structures remain discoverable!
+
+</div>
+
+<div>
+  <ComicCard src="/images/xkcd-pointers.png" alt="XKCD #138" maxHeight="340px" />
+</div>
+
+</div>
 
 <!--
 XKCD #138: https://xkcd.com/138/
 -->
 
 ---
-layout: default
-title: x86_64 vs. ARM64 Memory Architecture
+layout: two-cols
+title: "Modern Architecture: ARM64 & Apple Silicon"
+kicker: Beyond Classical x86
 ---
 
-<div class="flex justify-center">
-  <img src="./images/x86-vs-arm64.png" class="h-72 rounded shadow border border-gray-700" />
-</div>
+### <strong class="text-cyan-400 font-bold">Pure Paged Memory (No Segmentation)</strong>
+* **Flat Address Space**: Completely abandons legacy x86 segmentation descriptors (`GDT`/`LDT`).
+* **Hardware Enforced**: Flat 64-bit virtual addressing simplifies memory layout and pointer integrity.
 
----
-layout: default
-title: ARM64 Memory Organization
----
+### <strong class="text-amber-400 font-bold">Flexible Page Granules</strong>
+* **Configurable Granule Sizes**: Supports 4 KB, 16 KB, and 64 KB base page sizes.
+* **Apple Silicon Standard**: Linux/Android defaults to 4 KB; macOS on M-series standardizes on 16 KB granules.
 
-Modern hardware architectures (e.g. Apple Silicon, ARM servers) introduce architectural differences:
+::right::
 
-* **Physical Memory (RAM)**
-  * Standard DRAM layout accessed via system bus.
-* **Paging Architecture**
-  * Uses **4-level page tables** (e.g., L0 $\to$ L1 $\to$ L2 $\to$ L3 translation).
-  * Configurable translation granule sizes: **4 KB**, **16 KB**, or **64 KB** pages.
-* **No Segmentation Available**
-  * **Major architectural difference from x86/x64**: ARM64 completely abandons segmentation.
-  * Modern operating systems and compilers use a flat memory model anyway, making segmentation obsolete.
+### <strong class="text-emerald-400 font-bold">Dual Translation Base Registers</strong>
+* **`TTBR0_EL0`**: Dedicated base register for user-space translations (lower half).
+* **`TTBR1_EL1`**: Dedicated base register for kernel-space translations (upper half).
+* **Zero Kernel TLB Flush**: Switching between user and kernel mode preserves kernel TLB caches!
 
-<!--
-A note about AArch64: In general, it looks somewhat similar to x86_64 — there is a TLB, translation tables, configurable granule page sizes (4 KB, 16 KB, or 64 KB; 2 MB and 1 GB blocks), and multiple levels (up to 4-level page tables indexed by TTBR0_EL0 for user space and TTBR1_EL1 for kernel space).
--->
-
----
-layout: default
-title: ARM64 Memory Translation Architecture
----
-
-<div class="flex justify-center">
-  <Figure src="/images/arm64-memory-translation.png" caption="ARM64 Translation: TTBR0_EL0 (User) and TTBR1_EL1 (Kernel) Multi-Level Page Tables" />
-</div>
+<Callout tone="info" icon="lucide:cpu" class="mt-4 text-xs">
+  <strong>Forensic Relevance:</strong> Apple Silicon's 16 KB page granules and ARM Pointer Authentication (PAC) alter memory acquisition offsets, pool tags, and stack unwinding compared to standard x86_64 dumps. <em>(See Appendix for full translation diagrams)</em>.
+</Callout>
 
 ---
 layout: section
 title: OS Internals & DKOM
 subtitle: Processes, Kernel Structures, and Rootkit Evasion
-index: "02"
+index: 02
 kicker: Section 2
 ---
 
 ---
 layout: image
-image: /images/os-data-structures-isometric.png
-side: right
-title: Operating System Data Structures
-kicker: Kernel Internals
----
-
-* **Process & Thread Tracking**
-  * Windows manages execution state via C structures (`EPROCESS`, `ETHREAD`, `FILE_OBJECT`).
-* **Doubly-Linked Lists (`LIST_ENTRY`)**
-  * Circular lists with `Flink` (forward) and `Blink` (backward) pointers.
-  * Connects active processes (`ActiveProcessLinks`), loaded DLLs, and open handles.
-* **Direct Kernel Object Manipulation (DKOM)**
-  * Rootkits alter kernel pointers directly to unhook malicious objects from active lists.
-
----
-layout: image
 image: /images/doubly-linked-list.png
 side: right
-title: Doubly-Linked Lists (`LIST_ENTRY`)
-kicker: Windows Kernel Internals
+title: OS Kernel Structures & Doubly-Linked Lists
 ---
 
-* **Circular Linked Structure**
-  * `LIST_ENTRY` embeds `Flink` (forward) and `Blink` (backward) pointers.
-  * Connects critical kernel objects: `EPROCESS`, `ETHREAD`, handles, drivers.
-* **The Rootkit Mechanism (DKOM)**
-  * Unlinking a process from `ActiveProcessLinks` hides it from APIs.
-  * Yet CPU scheduler structures keep executing the stealth threads.
+**Process & Thread Tracking**
+* Windows kernel manages execution state via C structures (`_EPROCESS`, `_ETHREAD`, `FILE_OBJECT`).
+* Each process holds identifiers (PID), parent links, security tokens, and pointer chains.
 
-<!-- Circular linked list structure linking EPROCESS blocks via Flink and Blink pointers -->
+**Circular Linked Lists (`LIST_ENTRY`)**
+* Processes are linked into a circular list via `ActiveProcessLinks`.
+* Circular `LIST_ENTRY` embeds `Flink` (forward) and `Blink` (backward) pointers connecting each `_EPROCESS`.
+* Standard system APIs (Task Manager, `EnumProcesses`) traverse this pointer chain to report running processes.
 
 ---
-layout: default
+layout: two-cols
 title: "DKOM: Direct Kernel Object Manipulation"
 ---
 
-* **Dozens of Doubly-Linked Lists in Windows**
-  * Maintained by the NT kernel for processes, threads, open handles, drivers, and network sockets.
-* **DKOM is Extensively Used by Rootkits**
-  * Unlinking the rootkit's `EPROCESS` block from `ActiveProcessLinks`.
-  * The process disappears from API calls (`EnumProcesses`, `Process32First/Next`, Task Manager).
-* **The Rootkit Paradox**
-  * *To do damage, the malware must execute on the CPU.*
-  * *To execute on the CPU, the thread must remain in the kernel scheduler.*
-  * Therefore, even if unlinked from process lists, the thread structures still reside in physical memory!
+### <strong class="text-rose-400 font-bold">The Rootkit Mechanism</strong>
 
-<Callout tone="warn" icon="lucide:shield-alert">
-  <strong>The Classroom Attendance Roster Analogy:</strong><br/>
-  Imagine a student sneaks up and erases their name from the classroom attendance sheet. When the teacher reads the list (<code>vol pslist</code>), the student is reported absent! But if the teacher walks down the aisles inspecting physical chairs for living human beings (<code>vol psscan</code>), the student is caught red-handed.
-</Callout>
+**Pointer Unhooking**
+* Kernel rootkits overwrite `ActiveProcessLinks.Flink` and `Blink` pointers.
+* Detaches the malicious `_EPROCESS` block from the circular linked list.
+
+**API Invisibility**
+* The unlinked process vanishes from Task Manager and OS enumeration APIs.
+* Standard system calls traverse the list and report zero malicious activity!
+
+::right::
+
+### <strong class="text-emerald-400 font-bold">The Rootkit Paradox</strong>
+
+**Execution Demands Scheduling**
+* To inflict damage, malware must execute code on CPU cores.
+* Threads must stay registered in the CPU dispatcher database.
+
+**The Forensic Reality**
+* Even if unlinked from process lists, all threads and VAD pages remain in RAM.
+* Physical pool carving (`vol psscan`) finds the stealth process immediately!
 
 <!--
 Historical milestone paper: Jamie Butler (Black Hat USA 2004) - 'FU Rootkit / Direct Kernel Object Manipulation':
@@ -296,28 +388,92 @@ http://www.blackhat.com/presentations/bh-usa-04/bh-us-04-butler/bh-us-04-butler.
 -->
 
 ---
-layout: panels
-title: High-Value Memory Structures
-kicker: Windows Kernel Forensic Targets
-panels:
-  - { icon: "lucide:cpu", title: Execution State, items: ["EPROCESS blocks & thread objects", "VAD (Virtual Address Descriptor) trees", "Unbacked executable allocations"] }
-  - { icon: "lucide:network", title: Network & Handles, items: ["Open TCP/UDP sockets & connections", "Active file & mutant handles", "Injected thread descriptors"] }
-  - { icon: "lucide:file-code", title: Code & Modules, items: ["PEB->Ldr loaded DLL lists", "Prefetch, Shimcache & UserAssist", "Infection marker mutexes"] }
-  - { icon: "lucide:key", title: Secrets & Caches, items: ["LSA cached domain credentials", "In-memory registry hives", "DNS client resolver cache"] }
+layout: vs
+title: List Traversal vs. Pool Carving
+left:
+  title: "vol pslist (API Traversal)"
+  items: ["Traverses the kernel ActiveProcessLinks list","Fast and follows official OS data structures","Vulnerability: blind to unlinked DKOM rootkits!","If a rootkit unlinks its node, pslist reports nothing"]
+right:
+  title: "vol psscan (Pool Carving)"
+  items: ["Scans raw physical RAM byte-by-byte","Carves _EPROCESS structures by pool tag (Proc)","The Catch: finds hidden rootkits & terminated PIDs","Classroom Analogy: checks physical chairs in aisles"]
 ---
+
+<!--
+The Classroom Attendance Roster Analogy:
+Imagine a student erases their name from the attendance sheet. When the teacher reads the list (pslist), the student is reported absent! But if the teacher walks down the aisles inspecting physical chairs (psscan), the student is caught red-handed.
+-->
+
+---
+layout: two-cols
+title: "High-Value Memory Structures: Process & OS State"
+---
+
+### <strong class="text-sky-400 font-bold">Execution State & Lineage</strong>
+
+**`_EPROCESS` & `_ETHREAD`**
+* Process IDs (PID), parent PIDs, creation timestamps, and token pointers.
+
+**VAD Trees (Virtual Address Descriptors)**
+* Self-balancing binary trees recording every memory allocation per process.
+
+**Loaded Modules (`PEB->Ldr`)**
+* In-memory doubly linked lists of loaded DLLs, memory bases, and file paths.
+
+::right::
+
+### <strong class="text-emerald-400 font-bold">Network & System Objects</strong>
+
+**Network Endpoints & Sockets**
+* Active TCP sockets, UDP endpoints, and protocol control blocks.
+
+**Object Handle Tables**
+* Open files, named pipes, security access tokens, and section objects.
+
+**Synchronization Mutexes**
+* Named mutant objects used as infection markers by trojans and worms.
+
+---
+layout: two-cols
+title: "High-Value Memory Structures: Code & Secrets"
+---
+
+### <strong class="text-amber-400 font-bold">In-Memory Code Artifacts</strong>
+
+**Injected Code Regions**
+* Unbacked executable allocations (`PAGE_EXECUTE_READWRITE`) hosting shellcode.
+
+**Execution History Traces**
+* Windows Prefetch, Shimcache, UserAssist, and MUICache preserved in RAM.
+
+**Decrypted Staging Buffers**
+* Unpacked malware binaries and payload code decrypted prior to execution.
+
+::right::
+
+### <strong class="text-rose-400 font-bold">Plaintext Secrets & Caches</strong>
+
+**Credential Material**
+* Plaintext passwords, LSA secrets, Kerberos tickets, and NT hashes in `lsass.exe`.
+
+**In-Memory Registry Hives**
+* SAM, SYSTEM, and SOFTWARE hives held in RAM, bypassing disk-level locks.
+
+**Network Resolution Caches**
+* Local DNS resolver cache (`dnsrslvr.dll`) recording visited C2 domains.
 
 ---
 layout: default
-title: "Memory Page Protections & W^X"
+title: Memory Page Protections & W^X
 ---
 
-* **Page Protection Flags**
-  * Memory pages enforce permissions: `READONLY`, `READWRITE`, `EXECUTE_READ`, `EXECUTE_READWRITE`.
-  * The MMU hardware enforces Data Execution Prevention (**DEP** / **W^X**).
-* **Process Injection Staging**
-  * Malware allocates memory in a victim process (`VirtualAllocEx`).
-  * Writes payload code (`WriteProcessMemory`).
-  * Executes via `CreateRemoteThread`, `QueueUserAPC`, or Process Hollowing.
+**Page Protection Flags**
+* Memory pages enforce permissions: `READONLY`, `READWRITE`, `EXECUTE_READ`, `EXECUTE_READWRITE`.
+* The MMU hardware enforces Data Execution Prevention (**DEP** / **W^X**).
+
+**Process Injection Staging**
+* Malware allocates memory in a victim process (`VirtualAllocEx`).
+* Writes payload code (`WriteProcessMemory`).
+* Executes via `CreateRemoteThread`, `QueueUserAPC`, or Process Hollowing.
 
 <Callout tone="warn" icon="lucide:shield-alert">
   <strong>The RWX Red Flag:</strong> Legitimate binaries strictly separate executable code (<code>.text</code> = RX) from writable data (<code>.data</code> = RW). A memory page that is simultaneously <strong>writable AND executable (PAGE_EXECUTE_READWRITE)</strong> is a prime indicator of unpacked shellcode staging!
@@ -326,26 +482,21 @@ title: "Memory Page Protections & W^X"
 ---
 layout: two-cols
 title: Process & DLL Injection Mechanics
-kicker: In-Memory Evasion
 ---
 
-### Remote Thread Injection
-1. `OpenProcess(PROCESS_ALL_ACCESS)`
-2. `VirtualAllocEx(PAGE_EXECUTE_READWRITE)`
-3. `WriteProcessMemory(...)`
-4. `CreateRemoteThread(...)`
-
-<Figure src="/images/process-injection-steps.png" caption="Direct remote thread allocation & invocation" />
+### <strong class="text-rose-400 font-bold">Remote Thread Injection</strong>
+* **Target Acquisition**: Attacker opens victim process with `PROCESS_ALL_ACCESS` (`OpenProcess`).
+* **Memory Staging**: Allocates executable memory in target via `VirtualAllocEx(PAGE_EXECUTE_READWRITE)`.
+* **Payload Delivery**: Copies malicious shellcode or DLL path using `WriteProcessMemory`.
+* **Execution**: Invokes code in victim context via `CreateRemoteThread` or `QueueUserAPC`.
 
 ::right::
 
-### Process Hollowing
-1. Spawn host suspended (`CREATE_SUSPENDED`)
-2. Unmap original code (`NtUnmapViewOfSection`)
-3. Allocate RWX and write malware PE
-4. Rewrite thread context (EIP/RIP) & resume
-
-<Figure src="/images/process-hollowing.png" caption="Hollowing out legitimate system binaries" />
+### <strong class="text-amber-400 font-bold">Process Hollowing (RunPE)</strong>
+* **Suspended Spawn**: Creates legitimate host process (e.g. `svchost.exe`) in suspended state (`CREATE_SUSPENDED`).
+* **Hollowing Out**: Unmaps original code section using `NtUnmapViewOfSection`.
+* **Payload Implantation**: Allocates memory at base address and writes malicious PE headers/sections.
+* **Context Hijacking**: Modifies thread register context (`SetThreadContext` for `EIP`/`RIP`) and calls `ResumeThread`.
 
 <!--
 Reference: Endgame Technical Survey - 'Ten Process Injection Techniques: A Technical Survey of Common and Trending Process Injection Techniques':
@@ -353,26 +504,35 @@ https://www.endgame.com/blog/technical-blog/ten-process-injection-techniques-tec
 -->
 
 ---
-layout: default
-title: And Now Something Completely PRACTICAL
+layout: bigtype
+title: "And Now for Something Completely Practical..."
+subtitle: "The formal architecture theory is behind us. Now we move from hardware physics to the battlefield: acquisition mechanics, rootkits, and real-world triage."
+kicker: Intermission · Monty Python Edition
+glow: true
 ---
 
-<div class="flex flex-col items-center justify-center mt-6">
-  <Figure src="/images/practical-forensics-banner.png" caption="Transitioning from operating system theory to applied volatile memory acquisition" />
+<div class="mt-8 flex items-center justify-center gap-3 text-slate-400 italic text-base">
+  <span class="text-amber-400 font-bold not-italic">Scene:</span>
+  <span>"And now for something completely different: A forensic analyst with a raw RAM dump."</span>
 </div>
 
 ---
-layout: image
-image: /images/xkcd-adobe-update.png
-side: right
+layout: two-cols
 title: Endless Updates & Breaches
-kicker: Practical Forensics
+kicker: The Systemic Reality
 ---
 
-* **The Update Fatigue Paradox**
-  * Infinite update chains, installers, and downloaders.
-* **Transition to Acquisition**
-  * Live malware triage begins where endpoint defenses failed.
+**The Update Fatigue Paradox**
+* Infinite update chains, popups, and user numbness.
+* Attackers exploit the delay between patch release and enterprise rollout.
+
+**Transition to Volatile Acquisition**
+* Live triage begins where perimeter defenses failed.
+* Next up: How to seize RAM without corrupting evidence.
+
+::right::
+
+<ComicCard src="/images/xkcd-adobe-update.png" alt="XKCD #1197" />
 
 <!--
 XKCD #1197: https://xkcd.com/1197/
@@ -380,184 +540,256 @@ The joke is from 2013, but it’s still pretty good and accurate. There’s no e
 -->
 
 ---
-layout: image
-image: /images/forensic-hardware-hotplug.png
-side: right
-title: Physical Seizure & Power Preservation
-kicker: Hardware Triage
+layout: two-cols
+title: The "Keep It Alive" Era
+kicker: Forensic Lore vs. Modern Reality
 ---
 
-* **The Race Against Power Loss**
-  * Pulling power drops DRAM state within seconds.
-  * Sleeping or screen locking triggers disk encryption or clears volatile session keys.
-* **Hardware Seizure Kit**
-  * **WiebeTech HotPlug LT**: Transfers running desktop power to a UPS battery pack without dropping an AC cycle!
-  * **Mouse Jiggler**: USB dongle preventing screensavers and sleep mode during physical transit.
+### <strong class="text-amber-400 font-bold">The Volatility Catch-22</strong>
+
+Picture an evidence seizure from the early BitLocker era: a seized PC is running with full-disk encryption keys residing solely in volatile DRAM. Pull the power plug, and the keys evaporate into thermal noise. Let the screensaver engage, and the volume seals shut.
+
+The response was this surreal kit: examiners clamped the **WiebeTech HotPlug** onto the live mains cable to seamlessly switch power to a mobile battery, inserted a hardware **mouse jiggler** to defeat idle timers, and drove the humming computer across the city in a police van.
+
+::right::
+
+<div class="flex flex-col h-full justify-start gap-3">
+  <div class="rounded overflow-hidden border border-line bg-surface-bg p-1 shadow-sm flex items-center justify-center">
+    <img src="/images/forensic-hardware-hotplug.png" alt="WiebeTech HotPlug LT & Mouse Jiggler" class="w-full max-h-[200px] object-contain rounded" />
+  </div>
+
+  <Callout tone="info" icon="lucide:sparkles" class="text-xs">
+    <strong>The 2026 Reality:</strong> Today, targets are laptops or cloud VMs, and modern standby locks TPM keys anyway. We don't drive running PCs in vans—we <strong>triage and dump RAM on-site</strong> in 90 seconds.
+  </Callout>
+</div>
 
 <!--
-Can anybody guess what this stuff is for? It’s used for transportation of desktops/servers from their original location to a forensic lab somewhere else, without any power interruption, so that volatile RAM content is preserved.
+Presenter Notes:
+- "Ask the audience: What do you think this Pelican case and mouse jiggler are for?"
+- "Tell the story: Back in the 2000s and early 2010s, if an encrypted desktop was running, pulling the plug meant losing the BitLocker/TrueCrypt keys forever. Investigators actually used this HotPlug device to switch a live PC to battery power and drive it across the city in a van!"
+- "Reference the Silk Road (Ross Ulbricht) arrest: in 2013 at the SF library, FBI agents staged a fake couple fight to distract Ross so another agent could grab his open laptop before he could close the lid."
+- "Modern contrast: Today, driving a running machine is asking for a kernel panic or thermal shutoff. With modern laptops, TPM 2.0, and fast live acquisition tools (WinPmem, DumpIt), standard procedure is to acquire memory right on the desk before touching anything else."
 -->
 
 ---
 layout: section
 title: Memory Acquisition
 subtitle: Live Seizure Physics, Hypervisors & Footprint Mitigation
-index: "03"
+index: 03
 kicker: Section 3
 ---
 
 ---
-layout: panels
+layout: two-cols
 title: Memory (Re)sources
-kicker: Volatile Artifact Sources
-panels:
-  - { icon: "lucide:cpu", title: Live RAM, items: ["Most volatile & complete evidence", "Running malware, keys & network sockets", "Cleanest capture from hypervisors (.vmem)"] }
-  - { icon: "lucide:file-text", title: Pagefile / Swap, items: ["pagefile.sys on disk", "Inactive pages flushed by OS manager", "Yields historical process fragments"] }
-  - { icon: "lucide:save", title: Hibernation & Dumps, items: ["hiberfil.sys compressed RAM snapshot", "MEMORY.DMP crash dump state", "Valuable if machine was powered off"] }
 ---
 
----
-layout: diagram
-title: Memory Acquisition Decision Tree
-kicker: Forensic Methodology
-note: Choosing the optimal preservation strategy based on virtualization and privilege level
----
+### <strong class="text-emerald-400 font-bold">Volatile RAM (Physical DRAM)</strong>
+* **The Prime Target**: Holds active process trees, network sockets, unencrypted buffers.
+* **Hypervisor Captures**: Cleanest acquisition via `.vmem` (VMware) or `.sav` (VirtualBox).
+* **High Volatility**: State disappears completely upon power disconnection.
 
-```mermaid
-graph TD
-    Start["Incident / Target System"] --> IsVM{"Virtual Machine?"}
-    IsVM -- Yes --> VMAction["Hypervisor Snapshot / Pause<br/>Extract .vmem / .sav"]
-    IsVM -- No --> IsRunning{"System Running?"}
-    IsRunning -- No --> DeadDisk["Acquire Disk Images:<br/>- hiberfil.sys<br/>- pagefile.sys<br/>- Crash Dumps"]
-    IsRunning -- Yes --> HasRoot{"Admin / Root Access?"}
-    HasRoot -- Yes --> LocalAcq["Local Live Acquisition<br/>(WinPmem / DumpIt / AVML)<br/>Stream to External / Network"]
-    HasRoot -- No --> HardwareAcq["Hardware DMA / Bus Probes<br/>(PCIe, Thunderbolt, FireWire)"]
-```
+::right::
 
----
-layout: panels
-title: Memory Acquisition Methods
-kicker: Forensic Preservation Techniques
-panels:
-  - { icon: "lucide:server", title: Hypervisors, items: ["VMware (.vmem), VirtualBox, KVM", "Snapshot / pause virtual guest", "Zero software footprint inside OS"] }
-  - { icon: "lucide:hard-drive", title: OS Live Acquisition, items: ["WinPmem, DumpIt, FTK CLI", "AVML & LiME for Linux", "Kernel driver loads into live host"] }
-  - { icon: "lucide:network", title: Remote Enterprise, items: ["Velociraptor, Binalyze AIR", "EDR-integrated telemetry pulls", "Fleet-scale live response"] }
----
+### <strong class="text-amber-400 font-bold">Non-Volatile Memory Backings</strong>
+* **Paging Files (`pagefile.sys`)**: OS swap stores flushed memory pages from dormant processes; rich source of historical strings.
+* **Hibernation (`hiberfil.sys`)**: Compressed kernel snapshot of physical RAM created before power-down (`PO_MEMORY_IMAGE`).
+* **Crash Dumps (`MEMORY.DMP`)**: BSOD kernel or full dumps written by Windows memory manager.
 
 ---
 layout: default
+title: Memory Acquisition Decision Tree
+---
+
+<AcquisitionDecisionTree class="w-full" />
+
+<!--
+Key Decision Factors for Memory Preservation:
+
+1. Virtual vs. Physical Machine:
+   - If Virtual Machine (ESXi, Hyper-V, Proxmox, KVM, VMware Workstation):
+     * ALWAYS pause or snapshot the VM from the hypervisor host.
+     * Extracts .vmem, .sav, or snapshot files with ZERO guest OS footprint.
+     * Bypasses all in-guest rootkits, anti-forensic hooks, or credential shredders.
+
+2. Power State (Live vs. Cold):
+   - If Powered Off:
+     * NEVER boot the live machine (booting overwrites swap files and initializes state).
+     * Acquire bit-stream disk image and carve memory backings: hiberfil.sys (compressed active RAM snapshot), pagefile.sys, and MEMORY.DMP crash dumps.
+
+3. Live System Privileges:
+   - If Admin / Root access is available:
+     * Use trusted, signed live capture tools (WinPmem, DumpIt, AVML, LiME).
+     * Stream directly across the local network (netcat / SSH) or write to an external fast NVMe drive to minimize memory footprint.
+   - If No Admin / Locked Workstation:
+     * Hardware DMA attacks / bus sniffing (PCILeech, Thunderbolt / PCIe DMA) can bypass lock screens and OS authorization by reading physical RAM directly from the system bus.
+-->
+
+---
+layout: two-cols
+title: Memory Acquisition Methods
+---
+
+### <strong class="text-cyan-400 font-bold">Hypervisor & Out-of-Band</strong>
+* **VM Snapshots**: Pausing guest VMs and extracting `.vmem` files creates **zero software footprint** inside the guest OS.
+* **Hardware DMA Probes**: Direct memory access via PCIe / Thunderbolt bus sniffers (e.g. PCI leech) bypassing OS kernel entirely.
+
+::right::
+
+### <strong class="text-rose-400 font-bold">Live OS & Enterprise Agents</strong>
+* **Kernel Driver Seizure**: Software tools (`WinPmem`, `DumpIt`, `LiME`, `AVML`) load signed drivers to map physical memory.
+* **Remote Fleet Response**: Pre-deployed enterprise frameworks (`Velociraptor`, EDR live response) stream memory over TLS.
+
+---
+layout: two-cols
 title: Common Acquisition Challenges
 ---
 
-* **The "Heisenberg Effect" (Tool Footprint)**
-  * Running an acquisition tool *on the live machine* modifies memory!
-  * Overwrites unallocated RAM, allocates buffers, creates processes (`win32dd.exe`).
-  * **Rule:** Minimize footprint; stream output to external USB or network share.
-* **Paging & Swap**
-  * Key payload code or strings may have been paged out to disk.
-* **Full-Disk Encryption (BitLocker / FileVault)**
-  * Cold shutdowns render RAM unreachable and lock disk volumes. Live memory acquisition preserves encryption keys!
-* **Malware Anti-Forensics**
-  * Kernel rootkits hooking memory device objects (`\Device\PhysicalMemory`).
-  * Anti-VM logic terminating upon detecting virtualization.
+### <strong class="text-amber-400 font-bold">The Heisenberg Footprint</strong>
+* **Observer Effect**: Executing acquisition software inevitably alters volatile RAM, overwriting unallocated memory and altering caches.
+* **Golden Rule**: Minimize driver footprint; stream image straight to external media or network sockets.
+
+### <strong class="text-sky-400 font-bold">Paging & Memory Smear</strong>
+* **Dynamic Smear**: Because the OS keeps running during dump creation, pages change mid-capture.
+* **Pagefile Splitting**: Inactive malicious code blocks may reside in `pagefile.sys` on disk.
+
+::right::
+
+### <strong class="text-purple-400 font-bold">Full-Disk Encryption (FDE)</strong>
+* **The Encryption Dilemma**: Powering down an active laptop triggers BitLocker / FileVault lockdown.
+* **Plaintext Keys**: Live memory acquisition extracts volume master keys (FVEK) to decrypt underlying disk images.
+
+### <strong class="text-rose-400 font-bold">The Privacy & Ethical Dilemma</strong>
+* **Collateral Capture**: Raw RAM indiscriminately dumps private browser tabs, password vaults, personal chats, and medical records unrelated to the incident.
+* **Forensic Mandate**: Strict data minimization, secure handling, and legal boundaries must govern volatile evidence collection.
 
 ---
-layout: default
-title: Local Memory Acquisition Best Practices
+layout: steps
+title: Local Acquisition Best Practices
+steps:
+  - { icon: "lucide:shield-check", title: "Elevated Drivers", desc: "Direct physical RAM access strictly requires root/admin to load signed kernel drivers (WinPmem, LiME)." }
+  - { icon: "lucide:hard-drive-download", title: "External Output", desc: "Never write dump files to the system drive! Overwrites deleted files and MFT. Stream to USB or netcat." }
+  - { icon: "lucide:cpu", title: "Analysis VM Sizing", desc: "Allocate small RAM (2–4 GB) in malware labs for exponentially faster dumps, and disable guest swap." }
 ---
 
-* **Admin / Root Privileges**
-  * Kernel-level driver access is strictly required to read physical memory on modern operating systems.
-* **Output Destination**
-  * **Never write the memory image to the system drive!** This overwrites deleted files and filesystem metadata.
-  * Write directly to a pre-mounted external USB drive or stream over netcat/SSH.
-* **Virtual Machine Sizing Strategy**
-  * If executing malware in a dedicated analysis VM, allocate **less RAM (e.g. 2 GB–4 GB)**.
-  * Less RAM = Faster dump times, faster Volatility parsing, less noise.
-  * Disable swap / pagefile in the guest to ensure all artifacts remain in physical RAM.
-
 ---
-layout: default
-title: Remote Memory Acquisition
+layout: two-cols
+title: Remote Enterprise Triage
 ---
 
-* **Fast Incident Response at Scale**
-  * Triage compromised servers or endpoints across global networks without travel.
-* **Agent Architecture**
-  * Forensic agents already running in memory have pre-allocated footprints.
-  * Captured image is encrypted and streamed directly over TLS to the evidence server.
-* **Enterprise Tooling**
-  * Velociraptor, Binalyze AIR, Cybereason, EnCase Endpoint Investigator.
-  * Supported natively by leading cloud-native EDR/XDR suites.
+### <strong class="text-sky-400 font-bold">Enterprise Fleet Reach</strong>
+* **Triage at Global Scale**: Collect volatile forensic artifacts across thousands of endpoints without travel.
+* **Incident Velocity**: Minutes from initial detection alert to active process and socket triage.
+
+::right::
+
+### <strong class="text-emerald-400 font-bold">Footprint & Stream Security</strong>
+* **Pre-Allocated Memory**: Dedicated response agents (e.g. Velociraptor) avoid allocating new execution pages.
+* **Encrypted TLS Stream**: Evidence streams encrypted directly to forensic collection servers without writing temporary files to local disk.
 
 <!--
 Very useful for fast Incident Response across large enterprise fleets without physical travel. Requires enterprise EDR/XDR agents or query frameworks like Velociraptor.
 -->
 
 ---
+layout: default
+title: Enterprise Forensics Tooling
+---
+
+Modern enterprise DFIR relies on automated query engines rather than manual live memory dumps:
+
+**Velociraptor (Rapid7)**
+* Powerful endpoint visibility tool using VQL (Velociraptor Query Language).
+* Direct memory hunting, YARA scanning, and process extraction across 10,000+ hosts simultaneously.
+
+**Commercial Incident Response Platforms**
+* **Binalyze AIR**: Automated compromise assessments and automated evidence acquisition.
+* **Cloud EDR/XDR**: Live response interactive shells (CrowdStrike, SentinelOne, Defender for Endpoint).
+
+**Hardware Acquisition Implants**
+* PCIe DMA devices (PCILeech) for physical hardware seizure bypassing OS locks completely.
+
+---
 layout: section
 title: Forensic Triage Tools
 subtitle: Redline, HBGary DDNA, Volatility 3, and MemProcFS
-index: "04"
+index: 04
 kicker: Section 4
 ---
 
 ---
-layout: default
-title: Memory Analysis Tool Ecosystem
+layout: two-cols
+title: Memory Analysis Ecosystem
 ---
 
-* **FireEye Redline**
-  * Free GUI-based tool for Windows incident response and triage.
-  * Proprietary, runs on Windows (.NET).
-* **HBGary / CounterTack Responder Pro**
-  * High-end commercial memory analysis platform.
-  * Introduced **Digital DNA (DDNA)** behavioral scoring.
-* **The Volatility Framework**
-  * The open-source industry standard.
-  * Python-based, cross-platform, modular, CLI-driven.
+### <strong class="text-sky-400 font-bold">Historical Pioneers (GUI & Triage)</strong>
+* **FireEye Redline**: Free Windows GUI triage; pioneered visual timeline density ("Time Wrinkles") and Malware Risk Index (MRI).
+* **HBGary Responder Pro**: Visionary commercial suite by Greg Hoglund; invented Digital DNA (DDNA) behavioral gene sequencing.
+
+::right::
+
+### <strong class="text-emerald-400 font-bold">The Open Source Standard</strong>
+* **The Volatility Framework**: The de facto global standard created by Aaron Walters and the Volatility Foundation.
+* **Modern Successors**: High-speed memory mounting (**MemProcFS**) and enterprise query engines (**Velociraptor**).
 
 ---
-layout: image
-image: /images/redline-time-wrinkles.png
-side: right
-title: FireEye Redline & "Time Wrinkles"
-kicker: Forensic Triage Tools
+layout: two-cols
+title: "FireEye Redline & \"Time Wrinkles\""
 ---
 
-* **Historical Role (2010s)**
-  * Free GUI triage tool developed by Mandiant / FireEye.
-  * Introduced **MRI (Malware Risk Index)** scoring for suspicious processes.
-* **The "Time Wrinkles" Innovation**
-  * Clustered forensic events visually across time.
-  * Solved timeline analysis by graphing activity spikes around the breach window.
-* **Why Modern DFIR Has Moved On**
-  * Sluggish on large dumps; Windows-only (.NET).
-  * Lacks depth for DKOM, hidden VADs, and raw carving.
-  * Replaced by **Velociraptor**, **Volatility 3**, and **MemProcFS**.
+<div class="flex h-full items-center justify-center p-2">
+  <div
+    class="p-2 rounded-xl max-w-full"
+    style="background-color: var(--surface-bg, var(--ink-2)); border: var(--rule-w, 1px) solid var(--line); box-shadow: var(--surface-shadow, 0 18px 42px -28px rgba(0,0,0,0.5));"
+  >
+    <img src="/images/redline-time-wrinkles.png" class="w-full h-auto max-h-[380px] object-contain mx-auto rounded" alt="Redline Time Wrinkles" />
+  </div>
+</div>
+
+::right::
+
+**The "Time Wrinkles" Innovation**
+* Solved timeline analysis by graphing density spikes around incident windows.
+* Clustered forensic events across time to highlight anomalous bursts.
+
+**Malware Risk Index (MRI)**
+* Automated heuristic risk rating for processes.
+
+**Why DFIR Moved On**
+* Sluggish on modern multi-GB dumps; Windows-only.
+* Replaced today by **Velociraptor**, **Volatility 3**, and **MemProcFS**.
 
 <!--
 Support for macOS and Linux memory artifacts was added in Redline in 2020, but it remains predominantly a Windows-centric triage tool.
 -->
 
 ---
-layout: image
-image: /images/responder-ddna.png
-side: right
+layout: two-cols
 title: HBGary Responder Pro & Digital DNA
-kicker: Forensic Triage Tools
 ---
 
-* **A Visionary Milestone in DFIR**
-  * Pioneered by rootkit researcher **Greg Hoglund** (HBGary / CounterTack).
-  * First platform to treat memory analysis as **behavioral genotyping**.
-* **Why DDNA Was Ahead of Its Time**
-  * Disassembled unbacked in-memory code blocks across processes.
-  * Mapped patterns into discrete **behavioral traits/genes**.
-  * Evaluated composite risk: *Does code resolve APIs via hashing AND open a raw TCP socket?*
-* **The Lingering Void**
-  * Today's tools still output raw tables (`malfind`, `netscan`).
-  * Automated semantic "gene sequencing" for memory remains an ideal.
+<div class="flex h-full items-center justify-center p-2">
+  <div
+    class="p-2 rounded-xl max-w-full"
+    style="background-color: var(--surface-bg, var(--ink-2)); border: var(--rule-w, 1px) solid var(--line); box-shadow: var(--surface-shadow, 0 18px 42px -28px rgba(0,0,0,0.5));"
+  >
+    <img src="/images/responder-ddna.png" class="w-full h-auto max-h-[380px] object-contain mx-auto rounded" alt="Responder Pro DDNA" />
+  </div>
+</div>
+
+::right::
+
+**Behavioral Genotyping in RAM**
+* Pioneered by rootkit researcher **Greg Hoglund** (HBGary).
+* First engine to treat memory forensics as **gene sequencing**.
+
+**Why DDNA Was Ahead of Its Time**
+* Disassembled unbacked code blocks across all processes.
+* Mapped byte patterns into traits (e.g. *API hashing + raw sockets*).
+
+**The Modern Void**
+* Modern tools still predominantly output raw tabular findings (unbacked memory pages, open sockets).
+* Automated composite "gene scoring" across multiple artifacts remains an industry ideal.
 
 <!--
 Obsolete and unavailable for a long time, but it pioneered groundbreaking behavioral heuristics.
@@ -567,153 +799,185 @@ Commercial successor / alternative references:
 -->
 
 ---
-layout: default
-title: "Digital DNA: Behavioral Gene Scoring"
+layout: two-cols
+title: "Digital DNA: Behavioral Genotyping in RAM"
+kicker: Trait Combination Scoring
 ---
 
-Instead of brittle file hashes or static strings, DDNA classifies code capabilities into trait categories:
+### <strong class="text-rose-400 font-bold">Execution & Privilege Genes</strong>
 
-<div class="grid grid-cols-2 gap-4 text-sm">
-<div>
+**Unbacked Execution & Packing**
+* Executing from non-file-backed allocations (`PAGE_EXECUTE_READWRITE`).
+* Runtime unpacker stubs and dynamic API resolving by hash (e.g. ROR13).
 
-* **Execution Anomaly Genes**
-  * Code executing from unbacked (non-file) memory (`PAGE_EXECUTE_READWRITE`)
-  * Self-modifying code or runtime unpacker stubs
-  * Manual PE header parsing / API resolving by hash
-* **Privilege & Evasion Genes**
-  * Direct kernel object manipulation (DKOM)
-  * Modifying security privileges (`SeDebugPrivilege`)
-  * Hooking SSDT, IRP major functions, or inline trampolines
+**Privilege & Pointer Tampering**
+* Direct kernel object manipulation (DKOM) to hide processes.
+* Token privilege manipulation (`SeDebugPrivilege`) and SSDT/dispatch table hooks.
 
-</div>
-<div>
+::right::
 
-* **Communication & Persistence Genes**
-  * Raw TCP/UDP socket creation from unexpected processes
-  * Manipulating Run keys or active service descriptors
-  * Injecting threads into critical system processes (`lsass.exe`, `explorer.exe`)
-* **Composite Threat Score**
-  * Benign tools may possess 1–2 traits (e.g., packed commercial software).
-  * Malicious implants exhibit a lethal **combination** of traits, yielding a 90+ DDNA severity score.
+### <strong class="text-emerald-400 font-bold">Communication & Composite Scoring</strong>
 
-</div>
-</div>
+**Persistence & Foreign Injection**
+* Injected threads in critical system binaries (`lsass.exe`, `explorer.exe`).
+* Unexpected raw socket endpoints and autostart service descriptors in RAM.
+
+**Automated Threat Scoring (0–100)**
+* Benign tools show 1–2 isolated traits (e.g. packed software).
+* Implants display lethal trait combinations in the same address space.
+* Sums weighted trait scores to prioritize high-risk processes instantly!
 
 ---
-layout: default
+layout: two-cols
 title: "Responder Pro: DDNA Trait Severity Scoring"
 ---
 
-<div class="flex justify-center">
-  <Figure src="/images/responder-ddna-details.png" caption="Responder Pro: DDNA Trait Severity Scoring & Composite Threat Rating" />
+<div class="flex h-full items-center justify-center p-2">
+  <div
+    class="p-2 rounded-xl max-w-full"
+    style="background-color: var(--surface-bg, var(--ink-2)); border: var(--rule-w, 1px) solid var(--line); box-shadow: var(--surface-shadow, 0 18px 42px -28px rgba(0,0,0,0.5));"
+  >
+    <img
+      src="/images/responder-ddna-details.png"
+      class="w-full h-auto max-h-[380px] object-contain mx-auto rounded"
+      alt="Responder Pro: DDNA Trait Severity Scoring & Threat Rating"
+    />
+  </div>
 </div>
 
+::right::
+
+**Visual Severity & Weighting**
+* **Red/Orange Bars**: Immediate visual indicator of anomalous trait density.
+* **Weight Scores**: Individual heuristic weights sum into module threat ratings.
+
+**Specific Malicious Genes Identified**
+* **`F6 E3`**: Injects or writes code directly into foreign process memory.
+* **`35 99`**: Modifies process access tokens and privileges (`SeDebug`).
+* **`1B 2A`**: Reads unmapped virtual memory of another process.
+* **`80 10`**: Manually constructs obfuscated strings at runtime.
+
+**Triage Acceleration**
+* Quickly isolates suspicious modules without manual disassembler reversing.
+
 ---
-layout: default
+layout: full
 title: "Responder Pro: Visual Canvas Disassembler"
+image: /images/responder-canvas.png
+caption: "Responder Pro: Visual Canvas In-Memory Disassembler & Control Flow Graph"
+footer: false
 ---
-
-<div class="flex justify-center">
-  <Figure src="/images/responder-canvas.png" caption="Responder Pro: Visual Canvas In-Memory Disassembler & Control Flow Graph" />
-</div>
 
 ---
 layout: default
 title: The Volatility Framework
 ---
 
-* **The Gold Standard in Memory Forensics**
-  * Open source (GPL license), completely free.
-  * Actively maintained by the Volatility Foundation and global DFIR community.
-* **Core Characteristics**
-  * Written in **Python**; runs natively on Linux, macOS, and Windows.
-  * Fast, scriptable, easily automated in CI/CD and triage pipelines.
-* **Comprehensive OS Support**
-  * Windows (XP through Windows 11 / Server 2025).
-  * Linux (kernels 2.6.x through 6.x).
-  * macOS & Android.
-* **Dual Toolchain in Our Lab**
-  * **Volatility 2 (`vol`)**: Essential for legacy Windows XP (raw socket scans, `dnscache`).
-  * **Volatility 3 (`vol3`)**: Modern framework rewrite for Windows 10/11 & 64-bit systems.
+The de facto open-source standard for volatile memory extraction and analysis:
+
+* **Open Architecture**: 100% Python-based, cross-platform, modular plugin pipeline.
+* **Symbol-Driven Reconstruction**: Resolves OS structures directly from symbol tables (PDB / DWARF / JSON ISF).
+* **Comprehensive Footprint**: Decodes processes, threads, network sockets, drivers, security tokens, clipboard, registry hives, and mutexes.
+
+<Callout tone="info" icon="lucide:terminal" class="mt-6">
+  <strong>Dual Toolchain Available in Lab:</strong><br/>
+  Use <code>vol</code> (Volatility 2) for legacy Windows XP artifacts (e.g. raw UDP scans, <code>dnscache</code>) and <code>vol3</code> (Volatility 3) for modern 64-bit triage with automated symbol downloading.
+</Callout>
 
 ---
-layout: panels
+layout: vs
+title: Volatility 2 vs. Volatility 3
+left:
+  title: "Volatility 2 (Legacy)"
+  items: ["Python 2.7 runtime (end-of-life)","Rigid OS profile strings: WinXPSP2x86","Deep legacy socket carving: connscan, sockets","CLI command: vol"]
+right:
+  title: "Volatility 3 (Modern)"
+  items: ["Modern Python 3 modular codebase","Dynamic symbols: automated Microsoft PDB / ISF","Unified single codebase across Win/Linux/Mac","CLI command: vol3"]
+---
+
+---
+layout: two-cols
 title: The Modern Memory Forensics Landscape
-kicker: Beyond Classic Volatility
-panels:
-  - { icon: "lucide:terminal", title: Volatility 3, items: ["Python 3 modular framework", "Automated PDB symbol download", "Cross-platform kernel analysis", "Deep offline artifact recovery"] }
-  - { icon: "lucide:cpu", title: MemProcFS, items: ["C/Rust ultra-high performance", "Mounts RAM as virtual filesystem", "Instantaneous search & DMA", "Ultra-fast live memory triage"] }
-  - { icon: "lucide:network", title: Velociraptor, items: ["Go enterprise telemetry engine", "VQL-driven endpoint sweeps", "Live triage across 50,000+ hosts", "Enterprise-scale fleet response"] }
 ---
 
----
-layout: default
-title: Additional Essential CLI Tools
----
+### <strong class="text-sky-400 font-bold">Deep Offline Forensic Engines</strong>
+* **Volatility 3 (Python 3)**:
+  * Symbol-driven reconstruction with automated Microsoft PDB / Linux ISF downloading.
+  * Modular plugin architecture for process carving, VAD tree analysis, and registry decoding.
 
-### `strings`
-* Extracts printable character sequences from binary files and memory dumps.
-* **Beware of text encoding!**
-  * Standard ASCII strings: `strings -a sample.vmem`
-  * 16-bit Little-Endian Unicode (default in Windows kernel): `strings -a -e l sample.vmem`
+::right::
 
-### `foremost`
-* Open-source file carving utility.
-* Recovers files from memory dumps based on file format headers, footers, and internal data structures:
-  * Office documents (`.doc`, `.rtf`, `.docx`)
-  * PDF files, images (`.jpg`, `.png`), PE executables (`.exe`, `.dll`)
+### <strong class="text-emerald-400 font-bold">High-Speed & Enterprise Triage</strong>
+* **MemProcFS (C/Rust)**:
+  * Mounts raw RAM dumps as a virtual filesystem (`/sys/`, `/pid/`, `/forensics/`).
+  * Instant string search, DMA hardware integration, and automated timeline generation.
+* **Velociraptor (Go / Rapid7)**:
+  * Fleet-wide endpoint visibility; sweeps 50,000+ endpoints concurrently using VQL queries.
 
 ---
-layout: default
-title: Foremost File Carving
+layout: two-cols
+title: What to Hunt for in Memory?
 ---
 
-<div class="flex justify-center">
-  <Figure src="/images/foremost-carving.png" caption="Foremost: File Header & Footer Magic Number Carving from Memory Dumps" />
-</div>
+### <strong class="text-sky-400 font-bold">Process & Memory Anomalies</strong>
+* **Lineage Violations**: Abnormal parent-child relationships (e.g. `wordpad` spawning `cmd`).
+* **Hidden Processes**: Processes unlinked from `ActiveProcessLinks` (revealed via `psscan`).
+* **Injected Code**: Unbacked executable allocations marked `PAGE_EXECUTE_READWRITE` (`malfind`).
+
+### <strong class="text-cyan-400 font-bold">Network Telemetry</strong>
+* **C2 Channels**: Active TCP sessions and listening UDP sockets tied to malicious PIDs.
+* **DNS Resolution**: Domains resolved before network termination carved from `dnsrslvr.dll`.
+
+::right::
+
+### <strong class="text-amber-400 font-bold">Execution History Traces</strong>
+* **Console Buffers**: Recent command-line history carved via `cmdscan` and `consoles`.
+* **Program Execution**: In-memory registry traces from Shimcache, Prefetch, and UserAssist.
+
+### <strong class="text-rose-400 font-bold">In-Memory Secrets & Mutexes</strong>
+* **Infection Markers**: Named mutexes created by malware to prevent double infection.
+* **Plaintext Secrets**: Decrypted TLS buffers, Kerberos tickets, and cached NT password hashes.
 
 ---
-layout: default
-title: Forensic Timeline from Memory
+layout: diagram
+title: Windows Process Lineage (Expected Tree)
+note: Legitimate Windows processes follow a deterministic hierarchy stemming from System (PID 4)
 ---
 
-<div class="flex justify-center">
-  <Figure src="/images/ram-forensics-timeline.png" caption="Reconstructed Forensic Timeline from Volatile Memory Artifacts" />
-</div>
+```mermaid
+graph TD
+    System["System (PID 4)"] --> smss["smss.exe<br/><small>(Session Manager Subsystem)</small>"]
+    smss --> smss0["smss.exe (Session 0)"]
+    smss --> smss1["smss.exe (Session 1)"]
+    smss0 --> csrss0["csrss.exe<br/><small>(Win32 Subsystem)</small>"]
+    smss0 --> wininit["wininit.exe<br/><small>(Windows Initialization)</small>"]
+    wininit --> services["services.exe<br/><small>(Service Control Manager)</small>"]
+    wininit --> lsass["lsass.exe<br/><small>(Local Security Authority)</small>"]
+    services --> svchost["svchost.exe<br/><small>(Service Hosts, with -k)</small>"]
+    services --> spoolsv["spoolsv.exe<br/><small>(Print Spooler)</small>"]
+    smss1 --> csrss1["csrss.exe"]
+    smss1 --> winlogon["winlogon.exe<br/><small>(Logon Process)</small>"]
+    winlogon --> userinit["userinit.exe"]
+    userinit --> explorer["explorer.exe<br/><small>(User Interactive Shell)</small>"]
+    explorer --> userapps["Browser, Office, cmd.exe, PowerShell"]
+```
 
 ---
-layout: default
-title: "What to Search for in Volatile Memory?"
+layout: two-cols
+title: Spotting Process Masquerading
 ---
 
-<div class="grid grid-cols-2 gap-4">
-<div>
+### <strong class="text-rose-400 font-bold">Parentage & Path Violations</strong>
+* **Parent Anomalies**: `svchost.exe` must be spawned by `services.exe` — if spawned by `explorer.exe` or `cmd.exe`, it is an impostor.
+* **Path Squatting**: System binaries must run from `System32`; any `svchost.exe` in `AppData` or `Temp` is malicious.
+* **Typo-Squatting**: Subtly misspelled names: `scvhost.exe`, `lsas.exe`, `csrs.exe`.
 
-### 1. Process Anomalies
-* Hidden / unlinked processes (DKOM)
-* Non-standard process parent-child trees
-* Process hollowing / DLL injection
+::right::
 
-### 2. Network Artifacts
-* Command & Control (C2) connections
-* Open listening UDP/TCP sockets
-* Cached DNS queries (`mialepromo.ru`)
-
-</div>
-<div>
-
-### 3. Execution & Persistence
-* Prefetch execution records
-* In-memory registry run keys
-* Command-line history buffers
-
-### 4. Forensic Secrets
-* Known bad Mutexes (infection markers)
-* Decrypted SSL/TLS traffic in heap
-* In-memory encryption keys & passwords
-
-</div>
-</div>
+### <strong class="text-amber-400 font-bold">Instance Counts & Memory Clues</strong>
+* **Singleton Violations**: Legitimate systems run exactly ONE instance of `wininit.exe`, `services.exe`, and `lsass.exe`. Two `lsass` processes = active compromise!
+* **Command Line Flags**: `svchost.exe` without the `-k <group>` flag is an impostor.
+* **Process Hollowing**: Legitimate path on disk, but memory contains unbacked executable VADs (`PAGE_EXECUTE_READWRITE`).
 
 ---
 layout: default
@@ -738,89 +1002,206 @@ http://hexacorn.com/examples/2014-12-24_santas_bag_of_mutants.txt
 -->
 
 ---
-layout: diagram
-title: Windows Process Lineage (Expected Tree)
-kicker: Process Anomaly Detection
-note: Legitimate Windows processes follow a deterministic hierarchy stemming from System (PID 4)
+layout: two-cols
+title: "Essential CLI: strings & Encodings"
 ---
 
-```mermaid
-graph TD
-    System["System (PID 4)"] --> smss["smss.exe<br/><small>(Session Manager Subsystem)</small>"]
-    smss --> smss0["smss.exe (Session 0)"]
-    smss --> smss1["smss.exe (Session 1)"]
-    smss0 --> csrss0["csrss.exe<br/><small>(Win32 Subsystem)</small>"]
-    smss0 --> wininit["wininit.exe<br/><small>(Windows Initialization)</small>"]
-    wininit --> services["services.exe<br/><small>(Service Control Manager)</small>"]
-    wininit --> lsass["lsass.exe<br/><small>(Local Security Authority)</small>"]
-    services --> svchost["svchost.exe<br/><small>(Service Hosts, with -k)</small>"]
-    services --> spoolsv["spoolsv.exe<br/><small>(Print Spooler)</small>"]
-    smss1 --> csrss1["csrss.exe"]
-    smss1 --> winlogon["winlogon.exe<br/><small>(Logon Process)</small>"]
-    winlogon --> userinit["userinit.exe"]
-    userinit --> explorer["explorer.exe<br/><small>(User Interactive Shell)</small>"]
-    explorer --> userapps["Browser, Office, cmd.exe, PowerShell"]
+### <strong class="text-sky-400 font-bold">In-Memory String Extraction</strong>
+
+**Fast Heuristic Scanning**
+* Scans raw RAM dumps or process memory for consecutive printable characters.
+* Immediate triage for URLs, C2 domains, passwords, and registry keys.
+
+**Offset Tracking (`-t x`)**
+* Byte offset indexing to correlate strings with raw dump positions and VAD pages:
+```bash
+strings -a -t x memory.dmp | grep -i "http"
+```
+
+::right::
+
+### <strong class="text-amber-400 font-bold">The Text Encoding Trap</strong>
+
+**Windows Uses UTF-16LE**
+* Windows kernel and Win32 APIs store strings as 16-bit Little-Endian Unicode.
+* Default 8-bit ASCII `strings` misses wide-character strings entirely!
+
+**Mandatory Dual Scanning**
+```bash
+# 1. Standard 8-bit ASCII strings
+strings -a -t x memory.dmp > ascii.txt
+
+# 2. 16-bit Little-Endian Unicode (UTF-16LE)
+strings -a -e l -t x memory.dmp > unicode.txt
 ```
 
 ---
-layout: default
-title: "Spotting Process Masquerading & Anomalies"
+layout: two-cols
+title: "Essential CLI: foremost File Carving"
 ---
 
-Adversaries blend in by masquerading as standard Windows processes. Look for these red flags:
+### <strong class="text-emerald-400 font-bold">Magic Number Carving</strong>
 
-<div class="grid grid-cols-2 gap-4 text-xs">
-<div>
+**File Signature Recovery**
+* Recovers unlinked files directly from raw memory dumps using magic byte patterns.
+* Scans sequentially without requiring active filesystem metadata.
 
-### 1. Parentage Violations
-* `svchost.exe` spawned by `explorer.exe` or `cmd.exe` instead of `services.exe`.
-* `services.exe` or `lsass.exe` spawned by anything other than `wininit.exe` (or `winlogon.exe` on XP).
-* `cmd.exe` or `powershell.exe` spawned by `spoolsv.exe` or `sqlserver.exe`.
+**Common Carved Artifacts**
+* Decoy Office documents (`.doc`, `.rtf`, `.docx`) dropped by exploits.
+* Executables (`MZ`/`PE`), archives (`ZIP`), and cryptographic keys.
 
-### 2. Path Masquerading & Typo-squatting
-* System binaries must reside in `%SystemRoot%\System32\`.
-* Red flag paths: `C:\Users\...\AppData\`, `C:\Temp\`, `C:\Windows\svchost.exe`.
-* Typo-squats: `svch0st.exe`, `scvhost.exe`, `lsas.exe`, `csrs.exe`.
+::right::
 
-</div>
-<div>
+### <strong class="text-cyan-400 font-bold">Foremost Workflow & Caveats</strong>
 
-### 3. Instance Counts & CLI Arguments
-* **Singletons**: Exactly ONE instance of `System`, `wininit.exe`, `services.exe`, `lsass.exe`. If you see two `lsass.exe`, one is an implant!
-* `svchost.exe` **must** always have a `-k <group>` command-line argument. Naked `svchost.exe` without flags is malicious.
+**Practical Carving Command**
+```bash
+# Carve all supported file formats
+foremost -t all -i xp-infected.vmem -o carved/
 
-### 4. Memory Anomalies
-* **Process Hollowing**: Process points to valid binary on disk, but in RAM the `.text` section is unmapped and replaced with injected shellcode (`PAGE_EXECUTE_READWRITE`).
-* Detected with Volatility's `malfind` and `ldrmodules`.
+# Target specific types (OLE, PDF, EXE)
+foremost -t ole,pdf,exe -i sample.vmem -o carved/
+```
 
-</div>
-</div>
+**Memory Carving Caveats**
+* **Fragmentation**: Fragmented memory pages can produce corrupted output.
+* **No Metadata**: Carved files recover content, but lose original filenames and paths.
 
 ---
-layout: default
-title: "Memory Tracing & Dynamic Binary Instrumentation"
+layout: two-cols
+title: Memory Tracing & Dynamic Binary Instrumentation
+kicker: Static Dumps vs. Dynamic Tracing
 ---
 
-* **Single Process Memory Focus**
-  * Combining live memory emulation with instrumentation.
-* **Capabilities**
-  * Real-time tracking of memory page allocation and modification.
-  * API parameter hooking and execution tracing.
-* **Modern Open-Source Instrumentation Frameworks**
-  * **Frida**: Dynamic instrumentation toolkit for developers and reverse engineers.
-  * **Intel PIN**: Binary instrumentation engine for x86/x64.
-  * **DynamoRIO**: Runtime code manipulation system.
-  * **Qiling Framework**: Cross-platform multi-architecture binary emulation.
+### <strong class="text-sky-400 font-bold">Dynamic Tracing Principles</strong>
+
+**Beyond Static Snapshots**
+* Post-mortem forensics analyzes a single frozen memory dump after an incident.
+* Dynamic instrumentation observes live memory mutations and code flow in real-time!
+
+**Memory Page & State Tracking**
+* Intercept `VirtualAlloc` / `mprotect`, unpackers, and RWX transitions.
+
+**API & Register Hooking**
+* Inspect decrypted parameters, keys, and network buffers before they are wiped.
+
+::right::
+
+### <strong class="text-emerald-400 font-bold">Core Instrumentation Frameworks</strong>
+
+**[Frida](https://frida.re)**
+* Scriptable (JS/Python) multi-platform dynamic instrumentation toolkit.
+
+**[Qiling Framework](https://qiling.io)**
+* Multi-arch binary emulation with high-level OS syscall/kernel simulation.
+
+**[DynamoRIO](https://dynamorio.org)**
+* High-performance open-source JIT runtime code manipulation platform.
+
+**[Intel PIN](https://www.intel.com/content/www/us/en/developer/articles/tool/pin-a-dynamic-binary-instrumentation-tool.html)**
+* Industry-standard x86/x64 instruction-level profiling engine *(freeware)*.
 
 <!--
 It’s usually not about snapshotting memory (or a single static memory dump), but about tracking dynamic changes in real-time, tracing code execution, and instrumenting the emulator or runtime code on what to do next.
 -->
 
 ---
+layout: two-cols
+title: Reconstructing the Incident Timeline
+---
+
+### <strong class="text-sky-400 font-bold">Volatile Timestamp Sources</strong>
+
+* **Process Lifespans**: `_EPROCESS.CreateTime` and `ExitTime` define execution windows.
+* **Network Sessions**: TCP/UDP creation and tear-down timestamps (`netscan` / `connscan`).
+* **Cached Filesystem Records**: In-memory MFT records preserving `$STANDARD_INFORMATION`.
+* **Execution Artifacts**: Windows Prefetch run records and Shimcache modification times.
+
+::right::
+
+### <strong class="text-purple-400 font-bold">Timeline Synthesis & Analysis</strong>
+
+* **Unified Chronology**: Merging kernel structures and network sessions into a single stream.
+* **Volatility Timeliner**: `vol timeliner` extracts and sorts timestamps across all plugins.
+* **Temporal Pivoting**: Anchor the timeline around known external alerts or C2 callbacks.
+* **Clock Skew Caution**: Account for timezone drift, UTC conversions, and VM clock jumps.
+
+<!--
+Presenter Notes on Timeline Reconstruction:
+- "Explain to students how timelining turns isolated data points into an investigative sequence."
+- "Point out that volatile memory captures time-of-death state: terminated processes still have exit timestamps in memory until their EPROCESS block is recycled."
+- "Warn about clock skew: virtual machines frequently drift, and attackers may tamper with filesystem timestamps (timestomping). Volatile kernel timestamps (EPROCESS) are much harder to tamper with than disk timestamps."
+-->
+
+---
+layout: default
+title: Reconstructing the Attack Story
+kicker: Narrative vs. Evidence
+---
+
+<div class="grid grid-cols-2 gap-6 items-start">
+  <div>
+    <h3 class="text-xs font-bold text-sky-400 mb-3 uppercase tracking-wider">In-Memory Attack Lifecycle</h3>
+    <div class="space-y-2">
+      <div class="p-2.5 rounded" style="border: var(--rule-w, 1px) solid var(--line); background: var(--surface-bg, var(--ink-2));">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-400 font-mono">PHASE 1</span>
+          <span class="text-xs font-bold text-fg">Initial Ingress & Trigger</span>
+        </div>
+        <div class="text-[11px] text-fg-dim">Target executes weaponized lure or unpatched service exploits user-mode memory.</div>
+      </div>
+      <div class="p-2.5 rounded" style="border: var(--rule-w, 1px) solid var(--line); background: var(--surface-bg, var(--ink-2));">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-400 font-mono">PHASE 2</span>
+          <span class="text-xs font-bold text-fg">Transient Staging & Dropper</span>
+        </div>
+        <div class="text-[11px] text-fg-dim">Short-lived unpacker executes in memory, drops secondary stage, and terminates.</div>
+      </div>
+      <div class="p-2.5 rounded" style="border: var(--rule-w, 1px) solid var(--line); background: var(--surface-bg, var(--ink-2));">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-400 font-mono">PHASE 3</span>
+          <span class="text-xs font-bold text-fg">In-Memory Code Injection</span>
+        </div>
+        <div class="text-[11px] text-fg-dim">Payload migrates into legitimate host process via unbacked RWX VAD allocations.</div>
+      </div>
+      <div class="p-2.5 rounded" style="border: var(--rule-w, 1px) solid var(--line); background: var(--surface-bg, var(--ink-2));">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-400 font-mono">PHASE 4</span>
+          <span class="text-xs font-bold text-fg">C2 Beaconing & Exfiltration</span>
+        </div>
+        <div class="text-[11px] text-fg-dim">Injected thread establishes outbound network sockets to remote command infrastructure.</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h3 class="text-xs font-bold text-amber-400 mb-3 uppercase tracking-wider">Investigative Discipline</h3>
+    <ul class="space-y-2 text-xs text-fg leading-relaxed">
+      <li><strong>Data is Not a Story</strong>: A timeline shows temporal sequence, not verified causality. Never confuse correlation with proof.</li>
+      <li><strong>Anchor Every Link</strong>: Every step in the narrative must be anchored to demonstrable in-memory artifacts (PID, VAD offset, hash, or socket).</li>
+      <li><strong>Falsifiable Hypotheses</strong>: Formulate testable theories: <em>"If process X injected into Y, we should find unbacked RWX pages in Y's VAD tree."</em></li>
+      <li><strong>No Forensic Fantasies</strong>: Never bridge gaps in evidence with speculation. Gaps in telemetry belong in the open questions list, not the story!</li>
+    </ul>
+
+<Callout tone="warn" icon="lucide:shield-alert" class="mt-4 text-xs">
+  <strong>Core Forensic Principle:</strong> Be cautious—data isn't a story. Creating a hypothesis out of raw data is essential, but it must strictly follow demonstrative findings without assumptions or storytelling liberties.
+</Callout>
+  </div>
+</div>
+
+<!--
+Presenter Notes on Attack Reconstruction & Hypothesis Discipline:
+- "Warn students against 'narrative bias': investigators often fall in love with an exciting theory and cherry-pick data to fit it."
+- "Emphasize the golden rule: 'Data is not a story.' Timelines only establish sequence (A happened, then B happened). Establishing that A caused B requires corroborating evidence like process parentage, IPC pipes, or injected DLL handles."
+- "Stress hypothesis testing: in memory analysis, treat an attack hypothesis like a scientific experiment. Actively look for refuting evidence or unallocated remnants."
+- "Explain that while attacks vary in complexity, their in-memory footprint usually leaves trace evidence across these four structural stages."
+-->
+
+---
 layout: section
-title: Operational Security (OpSec)
-subtitle: Safe Handling of Carved Malware Payloads
-index: "05"
+title: Forensic Methodology & OpSec
+subtitle: Investigation Hygiene, Safe Handling & AI-Augmented DFIR
+index: 05
 kicker: Section 5
 ---
 
@@ -829,209 +1210,480 @@ layout: default
 title: Operational Security (OpSec) Best Practices
 ---
 
-* **The "Think Before You Act" Mentality**
-  * Malware carved from RAM can still be fully functional and weaponized!
-* **Handling Carved Samples**
-  * Always analyze extracted payloads inside an isolated, non-networked VM.
-  * Use host-only virtual networking during malware reverse engineering.
+**The "Think Before You Act" Mentality**
+* Malware carved from RAM can still be fully functional and weaponized!
+
+**Handling Carved Samples**
+* Always analyze extracted payloads inside an isolated, non-networked VM.
+* Use host-only virtual networking during malware reverse engineering.
 
 <Callout tone="bad" icon="lucide:alert-triangle">
   <strong>VirusTotal Hazard:</strong> Never upload unredacted memory carvings or full dumps to VirusTotal. Attackers monitor hash submissions to detect when their implants are discovered, and raw memory dumps routinely expose plaintext credentials, active session tokens, and confidential corporate data!
 </Callout>
 
 ---
-layout: diagram
+layout: two-cols
+title: "Managing Complexity: Notes & Evidence Hygiene"
+kicker: Investigation Protocol
+---
+
+### <strong class="text-sky-400 font-bold">Structured Notes & Triage Queue</strong>
+
+* **Plaintext Markdown**: Terminal-friendly, lightweight, and version-controlled in git alongside code.
+* **Hierarchical Log**: Group findings by scope: Target Image $\to$ Process (PID) $\to$ Memory Region (VAD).
+* **The `[TODO]` Queue**: Tag secondary leads (`TODO: mutant X`) to stay focused, logging exact offsets and commands.
+
+::right::
+
+### <strong class="text-emerald-400 font-bold">Evidence Hygiene & Timeline</strong>
+
+* **Workspace Separation**: Strict directory layout: `dumps/` (raw RAM), `carved/`, `procs/`, `notes/`.
+* **Hash Upfront**: Compute SHA-256 before analysis to verify integrity and pivot into threat intel.
+* **Timeline & Containment**: Maintain a chronological event log (`UTC | PID | Action`) and isolate all carved payloads.
+
+---
+layout: two-cols
+title: "AI & LLMs in DFIR: Leverage & Hazards"
+kicker: Modern DFIR Practice
+---
+
+### <strong class="text-cyan-400 font-bold">Practical AI Augmentation</strong>
+
+* **Assembly & Code Triage**: Explain disassembled loops, API hashing tricks, and runtime unpacking logic.
+* **Rules & Log Parsing**: Draft initial YARA/regex signatures from strings and summarize command extracts.
+* **Hypothesis Generation**: Brainstorm alternative persistence vectors and evasion mechanisms.
+
+::right::
+
+### <strong class="text-rose-400 font-bold">Forensic Pitfalls & Hazards</strong>
+
+* **Evidence Volume**: LLMs cannot ingest 64 GB of RAM; feed scoped, targeted plugin outputs.
+* **Hallucinations & False Alarms**: Models frequently misidentify benign Windows services as malware.
+* **OpSec & Verification Mandate**: Never paste dumps with credentials into cloud models; always verify against raw RAM.
+
+---
+layout: default
 title: Recommended Forensic Analysis Workflow
-kicker: Investigation Methodology
-note: Structured 8-step pipeline from volatile image identification to signature authoring
 ---
 
-```mermaid
-graph TD
-    A["1. Image Identification<br/>(vol imageinfo / vol3 windows.info)"] --> B["2. Process Triage<br/>(pslist, pstree, psscan, psxview)"]
-    B --> C["3. In-Memory Code Injection<br/>(malfind, ldrmodules)"]
-    C --> D["4. Network Reconstruction<br/>(connscan, sockets, netscan, dnscache)"]
-    D --> E["5. Artifact Recovery<br/>(prefetch, cmdline, registry, handles)"]
-    E --> F["6. Payload Carving<br/>(dumpfiles, procdump, foremost)"]
-    F --> G["7. Static Triage & Signatures<br/>(strings, oletools, yara, suricata)"]
-    G --> H["8. Incident Report & Timeline"]
-```
+<div class="flex flex-col justify-center h-full gap-4 -mt-2">
 
----
-layout: default
-title: "More Information & Learning Resources"
----
+<WorkflowPhase name="Phase 1" title="Live Triage & Volatile Scoping" tone="sky">
+  <WorkflowStep step="01" tag="IDENTIFY" tool="vol / vol3" title="Image Profile" cmd="windows.info" tone="sky">
+    OS version, architecture, kernel debugger block (KDBG) & capture time
+  </WorkflowStep>
+  <WorkflowStep step="02" tag="PROCESS" tool="vol / vol3" title="Process Triage" cmd="pstree / psscan" tone="cyan">
+    Parent-child lineage & unlinked DKOM rootkits
+  </WorkflowStep>
+  <WorkflowStep step="03" tag="INJECTION" tool="vol / vol3" title="Code Injections" cmd="malfind / ldrmodules" tone="emerald">
+    Unbacked RWX memory allocations & DLL hooks
+  </WorkflowStep>
+  <WorkflowStep step="04" tag="NETWORK" tool="vol / vol3" title="Network Telemetry" cmd="netscan / dnscache" tone="teal">
+    Active sockets, C2 endpoints & DNS cache
+  </WorkflowStep>
+</WorkflowPhase>
 
-* **Course Website**: [https://dior.ics.muni.cz/~valor/pv204](https://dior.ics.muni.cz/~valor/pv204)
-* **Reverse Engineering for Beginners**: Dennis Yurichev's free, legendary book.
-* **REMnux**: The premier Linux distribution for reverse engineering and malware analysis.
-* **ContagioDump**: Curated archive of real-world malware samples and analysis briefs.
-* **Malware Traffic Analysis**: Brad Duncan's pcap challenges and infection traffic exercises.
-* **The Art of Memory Forensics**: The definitive textbook by the Volatility core developers.
+<WorkflowPhase name="Phase 2" title="Deep Extraction, Analysis & Attribution" tone="amber">
+  <WorkflowStep step="05" tag="ARTIFACTS" tool="vol / vol3" title="Host Artifacts" cmd="cmdscan / hivelist" tone="amber">
+    Cmd history, prefetch, registry hives & handles
+  </WorkflowStep>
+  <WorkflowStep step="06" tag="CARVE" tool="vol / foremost" title="Payload Carving" cmd="dumpfiles / procdump" tone="orange">
+    Dump injected PEs, cached files & memory heaps
+  </WorkflowStep>
+  <WorkflowStep step="07" tag="SIGNATURES" tool="strings / yara" title="Static Triage" cmd="strings -a -e l / yara" tone="rose">
+    Wide strings, oletools & YARA/Suricata rules
+  </WorkflowStep>
+  <WorkflowStep step="08" tag="SYNTHESIS" tool="timeliner" title="Timeline & Report" cmd="timeliner / report.md" tone="purple">
+    Synthesize temporal event log & final DFIR report
+  </WorkflowStep>
+</WorkflowPhase>
 
----
-layout: default
-title: "Questions & Answers"
----
-
-### *Thank you for your attention!*
-
-<div class="flex justify-center mt-6">
-  <Figure src="/images/qa-puzzle.png" caption="Questions, discussions, and lab setup troubleshooting" />
 </div>
 
 ---
+layout: two-cols
+title: More Information & Learning Resources
+---
+
+### <strong class="text-sky-400 font-bold">Course Portal & Literature</strong>
+
+**[Course Website](https://www.fi.muni.cz/~xlorenc1/pv204)**
+* [fi.muni.cz/~xlorenc1/pv204](https://www.fi.muni.cz/~xlorenc1/pv204) — lecture slides, assignment briefs, and tooling.
+
+**[The Art of Memory Forensics](https://volatilityfoundation.org/the-art-of-memory-forensics/)**
+* Definitive textbook by Volatility core developers (Ligh, Case, Levy, Walters).
+
+**[Reverse Engineering for Beginners](https://beginners.re)**
+* Dennis Yurichev's free 1,000+ page guide to x86/ARM assembly and decompilation.
+
+::right::
+
+### <strong class="text-emerald-400 font-bold">Practice & Threat Intelligence</strong>
+
+**[REMnux Linux Distribution](https://remnux.org)**
+* Premier toolkit pre-configured for malware analysis and memory triage.
+
+**[Malware Traffic Analysis](https://www.malware-traffic-analysis.net)**
+* Brad Duncan's pcap challenges pairing memory dumps with network traces.
+
+**[MalwareBazaar (abuse.ch)](https://bazaar.abuse.ch)**
+* Live searchable malware exchange for samples, hashes, and IOCs.
+
+**[vx-underground](https://vx-underground.org)**
+* Massive repository of malware samples, source code, and reversing papers.
+
+---
+layout: bigtype
+title: "Day 1 Wrap-Up: Questions & Answers"
+subtitle: "Theory and methodology complete. Tomorrow: Hands-on memory triage in the lab!"
+kicker: Lecture Wrap-Up · Masaryk University
+glow: true
+---
+
+---
 layout: section
-title: Hands-on Malware Labs
+title: "Day 2: Hands-on Malware Labs"
 subtitle: Practical Memory Forensics with Volatility
-index: "06"
-kicker: Section 6
+index: 06
+kicker: Workshop Session
 ---
+
+---
+layout: two-cols
+title: Lab Environment & Tooling
+---
+
+### <strong class="text-sky-400 font-bold">Harness & Workspace Setup</strong>
+* **Universal Multi-Arch**: Docker Compose and VirtualBox for Linux, macOS (ARM/x86), and Windows.
+* **Rapid Lab Launchers**: CLI shortcuts (`exercise 1` to `5`) drop directly into analysis directories.
+* **Active Lab Notes**: Keep a running `notes.md` per lab (PIDs, offsets, commands, and `[TODO]` queue).
+
+::right::
+
+### <strong class="text-emerald-400 font-bold">Toolchain & Report Standard</strong>
+* **Volatility Suite**: `vol` (Volatility 2) and `vol3` (Volatility 3) installed with all plugins.
+* **Payload Carving & Triage**: `foremost`, `strings`, `pedump`, `oletools`, `rtfobj`, and `yara`.
+* **Reference Forensic Report**: Inspect `report/report.md` for the expected analysis standard.
 
 ---
 layout: default
-title: "Lab Environment & Requirements"
+title: "Volatility Cheat Sheet: Process & Kernel Triage"
+kicker: Lab Reference Guide · Volatility Quick Lookup
 ---
 
-* **Virtualization**
-  * Oracle VM VirtualBox or Docker Desktop (Apple Silicon / Linux / Windows).
-  * At least 12 GB of free disk space and 4 GB RAM allocated to the VM.
-* **Forensic Software**
-  * Volatility Framework 2.7 (`vol`) & Volatility 3 (`vol3`).
-  * Linux command-line utilities (`strings`, `foremost`, `grep`, `file`).
-  * Document analysis tools (`oletools`, `rtfobj`, `peepdf`).
-* **Text Editor**
-  * Your favorite text editor for taking structured analysis notes and writing reports.
-
----
-layout: default
-title: Volatility 2 Cheat Sheet
----
-
-| Command / Plugin | Purpose |
+| Command / Plugin | Forensic Purpose |
 | :--- | :--- |
 | `vol imageinfo` | Detect operating system, Service Pack, and suggested profile |
-| `vol pslist` / `pstree` | Display active processes and parent/child hierarchy |
-| `vol psscan` / `psxview` | Scan physical memory for hidden/unlinked processes (DKOM) |
-| `vol connections` / `connscan` | List active / historical TCP connections (WinXP) |
-| `vol sockets` / `sockscan` | Identify open listening TCP and UDP sockets (WinXP) |
-| `vol netscan` | Comprehensive network scan for Windows 7 / 10 / 11 |
-| `vol malfind -D dump/` | Detect unbacked executable allocations (`PAGE_EXECUTE_READWRITE`) |
-| `vol ldrmodules` | Detect unlinked DLLs hidden from the PEB |
-| `vol filescan` / `dumpfiles` | Scan for `FILE_OBJECT` structures and extract cached files to disk |
+| `vol pslist` | Traverse active process doubly-linked list (`ActiveProcessLinks`) |
+| `vol pstree` | Display parent-child process execution hierarchy |
+| `vol psscan` | Scan physical memory for hidden/unlinked processes (DKOM) |
+| `vol psxview` | Cross-reference process presence across OS dispatching structures |
+| `vol ldrmodules` | Detect unlinked DLLs hidden from the process PEB |
+
+---
+layout: default
+title: "Volatility Cheat Sheet: Injections & Network"
+kicker: Lab Reference Guide · Volatility Quick Lookup
+---
+
+| Command / Plugin | Forensic Purpose |
+| :--- | :--- |
+| `vol malfind -D <dir>` | Detect unbacked executable allocations (`PAGE_EXECUTE_READWRITE`) |
+| `vol connections` / `connscan` | List active / historical TCP connections (Windows XP) |
+| `vol sockets` / `sockscan` | Identify open listening TCP and UDP sockets (Windows XP) |
+| `vol netscan` | Comprehensive network object scan (Windows 7 / 10 / 11) |
+| `vol dnscache --dump_dir <dir>` | Dump DNS resolution cache from `dnsrslvr.dll` memory |
+| `vol handles -t Mutant` | Extract synchronization mutexes (malware infection markers) |
+
+---
+layout: default
+title: "Volatility Cheat Sheet: Registry & Credentials"
+kicker: Lab Reference Guide · Volatility Quick Lookup
+---
+
+| Command / Plugin | Forensic Purpose |
+| :--- | :--- |
+| `vol hivelist` | Locate in-memory registry hives and virtual memory offsets |
+| `vol printkey -K "<key>"` | Traverse and print specific registry keys and value entries |
+| `vol hashdump` | Extract and decrypt cached LM and NTLM password hashes |
+| `vol lsadump` | Dump LSA secrets, domain credentials, and active service accounts |
 | `vol cmdscan` / `consoles` | Extract command history and console buffer text |
 | `vol prefetchparser` | Parse execution records from Windows prefetch |
-| `vol dnscache --dump_dir dir/` | Dump DNS resolution cache from `dnsrslvr.dll` memory |
 
 ---
 layout: default
-title: "Exercise 1: `xp-infected.vmem`"
+title: "Volatility Cheat Sheet: Memory Carving & Drivers"
+kicker: Lab Reference Guide · Volatility Quick Lookup
 ---
 
-* **Command**:
-  ```bash
-  exercise 1
-  ```
-* **Recommended Tools**:
-  * Volatility 2 (`vol`), `strings`, `rtfobj`, `yara`
-* **Objectives**:
-  1. Identify the operating system profile and acquisition timestamp.
-  2. Find the suspicious parent-child process relationships (`cmd.exe`, `wordpad.exe`, `win32dd.exe`).
-  3. Identify the terminated dropper process (PID `1204`).
-  4. Uncover the C2 IP, resolved domain (`mialepromo.ru`), and listening UDP socket.
-  5. Carve the dropped decoy document and determine its true file format.
-  6. Author YARA and Suricata detection signatures for the campaign.
-
-*📖 See `report/report.md` for the complete sample forensic report!*
+| Command / Plugin | Forensic Purpose |
+| :--- | :--- |
+| `vol filescan` | Scan for active and cached `FILE_OBJECT` structures in RAM |
+| `vol dumpfiles -Q <offset> -D <dir>` | Extract cached files directly from RAM to disk |
+| `vol procdump -p <PID> -D <dir>` | Reconstruct and dump process executable image as a PE file |
+| `vol dlldump -p <PID> -D <dir>` | Extract and reconstruct PE binaries of injected/loaded DLLs |
+| `vol memdump -p <PID> -D <dir>` | Dump entire process address space into a `.dmp` file |
+| `vol modscan` / `svcscan` | Scan physical memory for active kernel drivers and Windows services |
 
 ---
-layout: default
-title: "Exercise 2: `win7_x64.vmem`"
+layout: two-cols
+title: "Exercise 1: xp-infected.vmem"
+kicker: Hands-on Lab 1
 ---
 
-* **Command**:
-  ```bash
-  exercise 2
-  ```
-* **Recommended Tools**:
-  * Volatility 2 (`vol`) or Volatility 3 (`vol3`)
-* **Objectives**:
-  1. Transition to a **64-bit Windows architecture**.
-  2. Note differences in memory layout, process structures, and pointer sizes.
-  3. Use `netscan` instead of `connscan` to inspect modern network objects.
-  4. Inspect token privileges (`privs`) and identify process injection using `malfind`.
+<LabLauncher command="exercise 1" />
 
----
-layout: default
-title: "Exercise 3: `zeus.vmem`"
----
+* **Target Memory Image**: `xp-infected.vmem` (Windows XP SP2/SP3 x86)
+* **Key Toolchain**: Volatility 2 (`vol`), `strings`, `rtfobj`, `yara`
 
-* **Command**:
-  ```bash
-  exercise 3
-  ```
-* **Recommended Tools**:
-  * Volatility 2 (`vol`)
-* **Objectives**:
-  1. Triage the infamous **Zeus (Zbot)** banking trojan.
-  2. Find suspicious network connections and C2 beaconing.
-  3. Identify which legitimate process was hollowed/injected to conduct the banking theft.
-  4. Find the infection mutex used by Zeus.
+<Callout tone="info" icon="lucide:book-open" class="mt-3 text-xs">
+  See <code>report/report.md</code> for the complete reference forensic report!
+</Callout>
+
+::right::
+
+### <strong class="text-amber-400 font-bold">Mission Objectives</strong>
+
+<v-clicks>
+
+* **Profile & Lineage**: Detect OS profile (`imageinfo`) and abnormal parentage (`cmd`, `wordpad`, `win32dd`).
+* **Dropper & C2 Telemetry**: Identify terminated dropper process (PID `1204`), resolved C2 domain, and UDP socket.
+* **Decoy Carving & Signatures**: Carve dropped decoy document and author YARA / Suricata detection rules.
+
+</v-clicks>
 
 ---
 layout: default
-title: "Exercise 4: `zeus2x4.vmem`"
+title: "Exercise 1: Debrief & Solution Walkthrough"
+kicker: Post-Lab Walkthrough (Instructors / After Completion)
 ---
 
-* **Command**:
-  ```bash
-  exercise 4
-  ```
-* **Recommended Tools**:
-  * Volatility 2 (`vol`)
-* **Objectives**:
-  1. Advanced Zeus variant analysis.
-  2. Identify the process responsible for network activity.
-  3. Dump the injected virus payload and recover its decrypted configuration from memory heap!
+<div class="grid grid-cols-2 gap-6 items-start">
+  <div>
+    <h3 class="text-xs font-bold text-sky-400 mb-3 uppercase tracking-wider">Reconstructed Incident Chain</h3>
+    <div class="space-y-2">
+      <div class="p-2.5 rounded" style="border: var(--rule-w, 1px) solid var(--line); background: var(--surface-bg, var(--ink-2));">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-400 font-mono">PHASE 1</span>
+          <span class="text-xs font-bold text-fg">Exploit Document Launch</span>
+        </div>
+        <div class="text-[11px] text-fg-dim">Target opens weaponized file; <code>wordpad.exe</code> spawns from user shell.</div>
+      </div>
+      <div class="p-2.5 rounded" style="border: var(--rule-w, 1px) solid var(--line); background: var(--surface-bg, var(--ink-2));">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-400 font-mono">PHASE 2</span>
+          <span class="text-xs font-bold text-fg">Transient Dropper Execution</span>
+        </div>
+        <div class="text-[11px] text-fg-dim">Short-lived child dropper (PID <code>1204</code>) drops payload and quickly terminates.</div>
+      </div>
+      <div class="p-2.5 rounded" style="border: var(--rule-w, 1px) solid var(--line); background: var(--surface-bg, var(--ink-2));">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-400 font-mono">PHASE 3</span>
+          <span class="text-xs font-bold text-fg">In-Memory Code Injection</span>
+        </div>
+        <div class="text-[11px] text-fg-dim">Payload injects shellcode into <code>svchost.exe</code> (unbacked RWX allocation detected via <code>malfind</code>).</div>
+      </div>
+      <div class="p-2.5 rounded" style="border: var(--rule-w, 1px) solid var(--line); background: var(--surface-bg, var(--ink-2));">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-400 font-mono">PHASE 4</span>
+          <span class="text-xs font-bold text-fg">C2 Beaconing & Exfiltration</span>
+        </div>
+        <div class="text-[11px] text-fg-dim">Injected process opens UDP/TCP sockets to remote banking command and control host.</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h3 class="text-xs font-bold text-emerald-400 mb-3 uppercase tracking-wider">Corroborating Memory Artifacts</h3>
+    <ul class="space-y-2 text-xs text-fg leading-relaxed">
+      <li><strong>Process Tree (<code>pstree</code>)</strong>: Proves <code>explorer.exe</code> &rarr; <code>wordpad.exe</code> &rarr; dropper execution lineage.</li>
+      <li><strong>Carved Dead Object (<code>psscan</code>)</strong>: Recovers the unlinked, exited dropper process structure from physical pool tags.</li>
+      <li><strong>Memory Inode & Handles (<code>handles</code>)</strong>: Identifies file handle to dropped decoy document in temporary directory.</li>
+      <li><strong>VAD Descriptor (<code>vadinfo</code>)</strong>: Verifies <code>PAGE_EXECUTE_READWRITE</code> protection on memory page not backed by disk.</li>
+    </ul>
+
+<Callout tone="good" icon="lucide:check-circle-2" class="mt-4 text-xs">
+  <strong>Complete Hypothesis Proven:</strong> Every claim in the attack sequence is corroborated by at least two independent Volatility artifacts.
+</Callout>
+  </div>
+</div>
+
+<!--
+Presenter Notes on Exercise 1 Debrief:
+- "Walk through the four phases with students after they attempt Exercise 1."
+- "Show how the unbacked RWX pages found by malfind directly connect the transient dropper to svchost.exe."
+- "Point out how connscan/sockets corroborate the outbound C2 beaconing."
+-->
 
 ---
-layout: default
-title: "Exercise 5: `bob.vmem`"
+layout: two-cols
+title: "Exercise 2: win7_x64.vmem"
+kicker: Hands-on Lab 2
 ---
 
-* **Command**:
-  ```bash
-  exercise 5
-  ```
-* **Recommended Tools**:
-  * Volatility 2, Foremost, Strings, Oletools
-* **Objectives**:
-  1. Reconstruct Uncle Bob's user activity leading to compromise.
-  2. Uncover the initial infection vector: What caused the infection?
-  3. Carve the malicious file from memory.
-  4. **What known vulnerability (CVE) was exploited?**
+<LabLauncher command="exercise 2" />
+
+* **Target Memory Image**: `win7_x64.vmem` (Windows 7 SP1 x64)
+* **Key Toolchain**: Volatility 2 (`vol`) or Volatility 3 (`vol3`)
+
+<Callout tone="info" icon="lucide:cpu" class="mt-3 text-xs">
+  64-bit architecture shift: 8-byte pointers, PML4 paging, and modern pool tags.
+</Callout>
+
+::right::
+
+### <strong class="text-amber-400 font-bold">Mission Objectives</strong>
+
+<v-clicks>
+
+* **64-bit Architecture Shift**: Profile the 64-bit image and inspect 8-byte pointer layouts and PML4 paging.
+* **Modern Network Objects**: Use `netscan` instead of legacy `connscan` to map active TCP/UDP endpoints.
+* **Privilege & Injection Audit**: Audit token privileges (`privs`) and hunt unbacked executable allocations (`malfind`).
+
+</v-clicks>
 
 ---
-layout: default
-title: Lab Report Requirements
+layout: two-cols
+title: "Exercise 3: zeus.vmem"
+kicker: Hands-on Lab 3
 ---
 
-When submitting your laboratory assignment:
+<LabLauncher command="exercise 3" />
 
-* **Structure your findings logically**:
-  * Executive Summary $\to$ Image Metadata $\to$ Process Triage $\to$ Network Analysis $\to$ In-Memory Artifacts $\to$ Timeline $\to$ IOCs/Signatures.
-* **Correlate artifacts**:
-  * Don't just list raw tool outputs. Explain *how* the artifacts link together into an attack story.
-* **Actionable Detection**:
-  * Provide functional YARA rules and network detection signatures.
-* **Reference**:
-  * Follow the structure demonstrated in [`report/report.md`](file:///home/valor/Devel/personal/vagrant-memory-analysis/report/report.md).
+* **Target Memory Image**: `zeus.vmem` (Zeus / Zbot Banking Trojan)
+* **Key Toolchain**: Volatility 2 (`vol`)
+
+<Callout tone="warn" icon="lucide:shield-alert" class="mt-3 text-xs">
+  Zeus hollows legitimate system processes to steal online banking credentials.
+</Callout>
+
+::right::
+
+### <strong class="text-amber-400 font-bold">Mission Objectives</strong>
+
+<v-clicks>
+
+* **Trojan Profiling & Triage**: Profile and identify the active Zeus banking trojan infection.
+* **C2 Telemetry & Exfiltration**: Map malicious network connections and remote banking exfiltration ports.
+* **Process Hollowing & Mutex**: Identify the hollowed victim process and extract Zeus infection mutexes.
+
+</v-clicks>
+
+---
+layout: two-cols
+title: "Exercise 4: zeus2x4.vmem"
+kicker: Hands-on Lab 4
+---
+
+<LabLauncher command="exercise 4" />
+
+**Target Memory Image**
+* `zeus2x4.vmem` (Advanced Zeus Variant)
+
+**Key Toolchain**
+* Volatility 2 (`vol`), `dlldump`, `memdump`
+
+<Callout tone="info" icon="lucide:layers" class="mt-4 text-xs">
+  Multi-stage payload unpacking: Dynamic API resolving and in-memory heap configs.
+</Callout>
+
+::right::
+
+### <strong class="text-amber-400 font-bold">Mission Objectives</strong>
+
+<v-clicks>
+
+* **Multi-Stage Evasion Analysis**: Identify advanced banking trojan evasions and hollowed host processes.
+* **Channel Correlation**: Track processes maintaining persistent C2 beacon channels.
+* **Payload Carving & Decryption**: Dump injected memory segments (`dlldump`) and carve decrypted heap configs!
+
+</v-clicks>
+
+---
+layout: two-cols
+title: "Exercise 5: bob.vmem"
+kicker: Hands-on Lab 5
+---
+
+<LabLauncher command="exercise 5" />
+
+* **Target Memory Image**: `bob.vmem` (Compromised Workstation)
+* **Key Toolchain**: Volatility 2, Foremost, Strings, Oletools
+
+<Callout tone="info" icon="lucide:user-x" class="mt-3 text-xs">
+  Full attack reconstruction: From initial phishing lure to root exploit.
+</Callout>
+
+::right::
+
+### <strong class="text-amber-400 font-bold">Mission Objectives</strong>
+
+<v-clicks>
+
+* **Patient Zero & Lure Vector**: Reconstruct the phishing attack vector and extract the malicious lure file.
+* **Persistence & Privilege Escalation**: Discover malicious autostart services and local exploit execution to SYSTEM.
+* **Staging, Exfiltration & Timeline**: Locate stolen files in staging directories and synthesize the incident timeline!
+
+</v-clicks>
 
 ---
 layout: end
-title: Good Luck with the Analysis!
-subtitle: May your page tables always resolve and your DKOM scans be fruitful.
-contact: PV204 Security Technologies · Masaryk University
+title: Memory Analysis Complete
+subtitle: Ready for Hands-on Labs & Investigation
+contact: PV204 Security Technologies · Faculty of Informatics, Masaryk University
 ---
 
+---
+layout: section
+title: "Appendix: Advanced Architecture"
+subtitle: Deep-Dive into ARM64 Paging & Translation Hardware
+kicker: Optional Reference
+---
 
+---
+layout: default
+title: x86_64 vs. ARM64 Memory Architecture
+---
+
+| Architectural Dimension | Classical x86_64 | Modern ARM64 (AArch64) |
+| :--- | :--- | :--- |
+| **Translation Base Register** | Single `CR3` register for entire address space | Dual roots: `TTBR0_EL0` (User) & `TTBR1_EL1` (Kernel) |
+| **Context Switch Impact** | `CR3` rewritten $\to$ potential TLB churn / PCID | Only `TTBR0_EL0` rewritten $\to$ **Zero Kernel TLB flush** |
+| **Hardware Page Granules** | Fixed **4 KB** base (optional 2 MB / 1 GB hugepages) | Configurable: **4 KB** (Linux), **16 KB** (macOS M-series), **64 KB** |
+| **Legacy Segmentation** | Descriptors (`GDT`/`LDT`) still present in hardware | **Completely eliminated**; pure hardware paged model |
+| **Pointer Metadata** | Strict canonical sign-extension (traps if modified) | **TBI (Top Byte Ignore)** & **PAC (Pointer Authentication)** |
+
+<Callout tone="info" icon="lucide:cpu" class="mt-3 text-xs">
+  <strong>Forensic Takeaway:</strong> Apple Silicon's 16 KB page granule and ARM Pointer Authentication (PAC) alter memory acquisition offsets, pool tags, and stack unwinding compared to standard x86_64 dumps.
+</Callout>
+
+---
+layout: default
+title: ARM64 Dual Translation Architecture
+---
+
+<Arm64Translation class="w-full" />
+
+<!--
+Key Teaching Points for ARM64 Translation & Dual Roots:
+
+1. Dual Hardware Translation Roots:
+   - Unlike x86 which uses a single CR3 register, ARM64 features two distinct hardware base registers:
+     * TTBR0_EL0: Translates the lower half of the virtual address space (User Space, 0x0000_...).
+     * TTBR1_EL1: Translates the upper half of the virtual address space (Kernel Space, 0xFFFF_...).
+   - The hardware MMU uses bit 63 (or bit 55 depending on TCR_EL1.T1SZ) to immediately determine which base register to walk.
+
+2. Zero Kernel TLB Invalidation:
+   - On a process context switch (e.g. PID 100 to PID 200), the OS kernel only updates TTBR0_EL0 with the new process's page table pointer and ASID (Address Space Identifier).
+   - TTBR1_EL1 remains untouched. As a result, kernel page table entries and TLB caches are completely preserved across context switches, yielding massive performance benefits for system calls and high-frequency multitasking.
+
+3. Configurable Page Granules:
+   - ARM64 supports three hardware page granules:
+     * 4 KB: Standard for Linux and Android (48-bit VA = 4 levels of translation).
+     * 16 KB: Standard for macOS on Apple Silicon (M1/M2/M3/M4) (48-bit VA = 4 levels, but larger leaves).
+     * 64 KB: Used in enterprise high-throughput ARM servers (42-bit / 52-bit VA = only 2-3 levels of translation).
+
+4. MMIO and Peripheral Protection:
+   - Memory-Mapped I/O (UART, PCIe configuration spaces, timers, interrupt controllers) is mapped into kernel virtual memory or protected EL1/EL2 physical addresses.
+   - User applications at EL0 have zero direct access to MMIO space.
+-->
