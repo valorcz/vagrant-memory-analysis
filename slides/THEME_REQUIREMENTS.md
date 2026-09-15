@@ -74,10 +74,18 @@ Slidev auto-imports components located in `slides/components/`. The following co
   ```
 * **Purpose**: Modular workflow formatting components that drive responsive grid cards, top accent borders, tag colors, tool badges, and command pills while allowing markdown content/descriptions to remain directly editable in `slides.md`.
 
-### D. `<Callout tone="..." icon="...">`
-* **Usage**: `<Callout tone="info" icon="lucide:book-open">...</Callout>`
-* **Supported Tones**: `info`, `warn`, `bad`.
+### D. `<CalloutCard tone="..." icon="...">`
+* **Usage**: `<CalloutCard tone="info" icon="lucide:book-open">...</CalloutCard>`
+* **Supported Tones**: `info`, `warn`, `bad`, `good`, `accent`.
 * **Icons**: Any Lucide icon (`lucide:terminal`, `lucide:cpu`, `lucide:alert-triangle`, etc.).
+
+### E. `<SectionObjectives :items="[...]" tone="..." [label="..."] />` (`SectionObjectives.vue`)
+* **Usage**: `<SectionObjectives tone="sky" :items="['...']" />`
+* **Purpose**: Frosted glassmorphism card aligned right on section divider slides, revealing on `v-click` with subtle check icons and bold concept headers.
+
+### F. `<X86Translation />` (`X86Translation.vue`)
+* **Usage**: `<X86Translation class="w-full" />`
+* **Purpose**: Interactive x86 multi-level paging address translation pipeline. Supports clickable PDE/PTE rows, scenario presets (User Code, Injected RWX Shellcode, Swapped Page Fault #PF, Kernel Space), dynamic bitfield slicing, and physical DRAM address resolution.
 
 ---
 

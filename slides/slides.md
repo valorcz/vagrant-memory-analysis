@@ -131,6 +131,12 @@ kicker: Section 1
 bg: /images/monty-python-architecture.jpg
 ---
 
+<SectionObjectives tone="sky" :items="[
+  '<strong>Virtual vs. Physical RAM</strong>: Address spaces, paging & process isolation',
+  '<strong>Register CR3 & MMU</strong>: Hardware translation to physical frames',
+  '<strong>Forensic Reconstruction</strong>: Finding the memory root to unmask processes',
+]" />
+
 ---
 layout: vs
 title: Physical vs. Virtual Memory
@@ -185,10 +191,10 @@ title: "The Forensic Keystone: Register CR3"
 
 Physical RAM is a raw, scrambled dump of billions of bytes with no visible process boundaries. How does an analyst reconstruct running processes from a flat binary dump?
 
-<Callout tone="info" icon="lucide:key" class="my-6">
+<CalloutCard tone="info" icon="lucide:key" class="my-6">
   <strong>The Directory Table Base (DTB):</strong><br/>
   The CPU register <code>CR3</code> holds the physical base address of each process's top-level page directory. When forensic tools scan a memory dump, they hunt for valid kernel <code>CR3</code> structures. <strong>Without CR3, virtual addresses cannot be resolved into executable code or running processes!</strong>
-</Callout>
+</CalloutCard>
 
 * **Per-Process Page Tables**: Every process has its own CR3 pointer stored in kernel `_KPROCESS.DirectoryTableBase`.
 * **Hardware Page Walk**: The Memory Management Unit (MMU) walks 4-level page tables (`PML4` $\to$ `PDPT` $\to$ `PD` $\to$ `PT`) to translate virtual offsets to physical frames.
@@ -200,9 +206,9 @@ title: x86 Address Translation Pipeline
 
 <X86Translation class="w-full" />
 
-<Callout tone="info" icon="lucide:info" class="mt-2 text-xs">
+<CalloutCard tone="info" icon="lucide:info" class="mt-2 text-xs">
   <strong>Why No Segmentation Adder?</strong> Modern 32-bit & 64-bit OSes (Windows & Linux) configure segments with Base = 0 (Flat Memory Model), so Logical Address == Linear Virtual Address.
-</Callout>
+</CalloutCard>
 
 <!--
 Page sizes in modern architectures: 4 KB (standard), 2 MB (large/huge page), 1 GB (gigabyte page), and proposed 512 GB pages.
@@ -328,9 +334,9 @@ kicker: Beyond Classical x86
 * **`TTBR1_EL1`**: Dedicated base register for kernel-space translations (upper half).
 * **Zero Kernel TLB Flush**: Switching between user and kernel mode preserves kernel TLB caches!
 
-<Callout tone="info" icon="lucide:cpu" class="mt-4 text-xs">
+<CalloutCard tone="info" icon="lucide:cpu" class="mt-4 text-xs">
   <strong>Forensic Relevance:</strong> Apple Silicon's 16 KB page granules and ARM Pointer Authentication (PAC) alter memory acquisition offsets, pool tags, and stack unwinding compared to standard x86_64 dumps. <em>(See Appendix for full translation diagrams)</em>.
-</Callout>
+</CalloutCard>
 
 ---
 layout: section
@@ -341,21 +347,97 @@ kicker: Section 2
 bg: /images/monty-python-dkom.jpg
 ---
 
+<SectionObjectives tone="rose" :items="[
+  '<strong>Kernel Objects</strong>: Process tracking via <code>_EPROCESS</code> & VAD trees',
+  '<strong>DKOM Rootkits</strong>: Evading Task Manager by unlinking <code>ActiveProcessLinks</code>',
+  '<strong>Traversal vs. Carving</strong>: Why list traversal misses what pool carving catches',
+  '<strong>The RWX Red Flag</strong>: Spotting code injection via memory page protections',
+]" />
+
 ---
-layout: image
-image: /images/doubly-linked-list.png
-side: right
-title: OS Kernel Structures & Doubly-Linked Lists
+layout: two-cols
+title: "OS Kernel Structures: Process & Thread Tracking"
+kicker: Executive Objects & Abstractions
 ---
 
-**Process & Thread Tracking**
-* Windows kernel manages execution state via C structures (`_EPROCESS`, `_ETHREAD`, `FILE_OBJECT`).
-* Each process holds identifiers (PID), parent links, security tokens, and pointer chains.
+### <strong class="text-sky-400 font-bold">The Executive Abstraction</strong>
+* **Handles vs. Objects**: Userland holds handle tokens; the kernel manages `_EPROCESS`.
+* **Kernel Pool Residency**: Allocated in non-paged pool memory (`Proc` tag).
 
-**Circular Linked Lists (`LIST_ENTRY`)**
-* Processes are linked into a circular list via `ActiveProcessLinks`.
-* Circular `LIST_ENTRY` embeds `Flink` (forward) and `Blink` (backward) pointers connecting each `_EPROCESS`.
-* Standard system APIs (Task Manager, `EnumProcesses`) traverse this pointer chain to report running processes.
+### <strong class="text-cyan-400 font-bold">Lineage & Credentials</strong>
+* **Process Lineage**: `UniqueProcessId` (PID) & parent PPID hierarchy.
+* **Security Token**: `Token` (`_EX_FAST_REF`) holds user SID and privileges.
+
+::right::
+
+### <strong class="text-amber-400 font-bold">Memory & Execution</strong>
+* **Paging Keystone**: `DirectoryTableBase` (CR3) links virtual space to physical DRAM.
+* **VAD Descriptors**: `VadRoot` tree maps all private and mapped allocations.
+
+### <strong class="text-purple-400 font-bold">Threads & Linkage</strong>
+* **Thread Queue**: `ThreadListHead` anchors executing `_ETHREAD` structures.
+* **Global Active Ring**: `ActiveProcessLinks` chains live processes for enumeration.
+
+<!--
+Speaker Notes:
+- Handles vs. Objects: Applications never interact with _EPROCESS directly; they hold opaque HANDLES. The Windows Executive mediates all operations.
+- Non-Paged Pool: _EPROCESS structures reside in non-paged kernel pool memory so they are never swapped to disk and cannot be accessed from user mode.
+- Lineage & PPID: Process hierarchy is critical in forensics. Attackers use PPID spoofing to make malware look like a child of svchost.exe or explorer.exe.
+- Security Token: Dictates privilege boundaries (e.g. SeDebugPrivilege) and user account context. Token stealing/duplication is a primary privilege escalation path.
+- CR3 DTB: Without DirectoryTableBase, the MMU cannot translate virtual addresses to physical RAM frames.
+- VAD Tree: A balanced AVL tree describing every VirtualAlloc allocation and DLL mapping. Hunting unbacked executable memory in the VAD is how we catch injected code.
+- Thread Scheduling: Processes are passive resource containers; threads are the actual units of execution dispatched by the CPU.
+-->
+
+---
+layout: default
+title: "Anatomy of the _EPROCESS Block"
+kicker: Kernel Data Structure Layout
+---
+
+```c
+typedef struct _EPROCESS {
+    KPROCESS             Pcb;                  // Dispatcher scheduling state
+    EX_PUSH_LOCK         ProcessLock;
+    LARGE_INTEGER        CreateTime;
+    HANDLE               UniqueProcessId;      // PID
+    LIST_ENTRY           ActiveProcessLinks;   // <-- Circular Doubly-Linked Node!
+    PVOID                VadRoot;              // VAD Tree (Virtual Memory Maps)
+    EX_FAST_REF          Token;                // Security context & privileges
+    ULONG_PTR            DirectoryTableBase;   // CR3 (Physical DTB for MMU)
+    UCHAR                ImageFileName[15];    // Executable name (ASCII)
+    struct _ETHREAD*     ThreadListHead;       // Active threads in process
+    ...
+} EPROCESS, *PEPROCESS;
+```
+
+<!--
+Speaker Notes:
+- Embedded LIST_ENTRY Pattern:
+  Instead of wrapping data inside list nodes (traditional container style), the Windows NT kernel embeds LIST_ENTRY directly inside the _EPROCESS struct.
+  This allows an object to belong to multiple linked lists simultaneously with zero heap allocation overhead.
+
+- The CONTAINING_RECORD Macro:
+  When traversing ActiveProcessLinks, pointers point to the ActiveProcessLinks field (+0x088), not the start of _EPROCESS!
+  The kernel and forensic tools recover the parent object using pointer arithmetic:
+  #define CONTAINING_RECORD(address, type, field) ((type *)((char *)(address) - offsetof(type, field)))
+
+- Non-Paged Pool Tagging:
+  Allocated from non-paged kernel pool memory using the 4-byte ASCII tag 'Proc'.
+  Even if unlinked from ActiveProcessLinks (DKOM), the physical pool tag remains discoverable by pool carving (psscan).
+-->
+
+---
+layout: default
+title: "ActiveProcessLinks & Doubly-Linked Lists"
+kicker: OS Kernel Architecture
+---
+
+<ProcessLinkedList class="w-full" />
+
+<CalloutCard tone="info" icon="lucide:git-commit" class="mt-2 text-xs">
+  <strong>API Traversal Dependency:</strong> Windows APIs (<code>EnumProcesses</code>, Task Manager, process listing utilities) start at <code>PsActiveProcessHead</code> and follow <code>Flink</code> pointers sequentially. If a node is missing from this chain, standard tools never see it!
+</CalloutCard>
 
 ---
 layout: two-cols
@@ -382,7 +464,7 @@ title: "DKOM: Direct Kernel Object Manipulation"
 
 **The Forensic Reality**
 * Even if unlinked from process lists, all threads and VAD pages remain in RAM.
-* Physical pool carving (`vol psscan`) finds the stealth process immediately!
+* Physical pool carving finds the stealth process immediately!
 
 <!--
 Historical milestone paper: Jamie Butler (Black Hat USA 2004) - 'FU Rootkit / Direct Kernel Object Manipulation':
@@ -393,11 +475,11 @@ http://www.blackhat.com/presentations/bh-usa-04/bh-us-04-butler/bh-us-04-butler.
 layout: vs
 title: List Traversal vs. Pool Carving
 left:
-  title: "vol pslist (API Traversal)"
-  items: ["Traverses the kernel ActiveProcessLinks list","Fast and follows official OS data structures","Vulnerability: blind to unlinked DKOM rootkits!","If a rootkit unlinks its node, pslist reports nothing"]
+  title: "List Traversal (Pointer Walking)"
+  items: ["Traverses the kernel ActiveProcessLinks list","Fast and follows official OS pointer chains","Vulnerability: blind to unlinked DKOM rootkits!","Task Manager & standard APIs see zero traces"]
 right:
-  title: "vol psscan (Pool Carving)"
-  items: ["Scans raw physical RAM byte-by-byte","Carves _EPROCESS structures by pool tag (Proc)","The Catch: finds hidden rootkits & terminated PIDs","Classroom Analogy: checks physical chairs in aisles"]
+  title: "Pool Carving (Raw Memory Scanning)"
+  items: ["Scans raw physical RAM byte-by-byte","Carves _EPROCESS structures by pool tag ('Proc')","Unmasks hidden rootkits & terminated processes","Classroom Analogy: checks physical chairs in aisles"]
 ---
 
 <!--
@@ -408,101 +490,130 @@ Imagine a student erases their name from the attendance sheet. When the teacher 
 ---
 layout: two-cols
 title: "High-Value Memory Structures: Process & OS State"
+kicker: Forensic Goldmines in RAM
 ---
 
 ### <strong class="text-sky-400 font-bold">Execution State & Lineage</strong>
-
-**`_EPROCESS` & `_ETHREAD`**
-* Process IDs (PID), parent PIDs, creation timestamps, and token pointers.
-
-**VAD Trees (Virtual Address Descriptors)**
-* Self-balancing binary trees recording every memory allocation per process.
-
-**Loaded Modules (`PEB->Ldr`)**
-* In-memory doubly linked lists of loaded DLLs, memory bases, and file paths.
+* **`_EPROCESS` & `_ETHREAD`**: PIDs, parent PPIDs, start times, security tokens.
+* **VAD Descriptors**: AVL trees tracking every memory page allocation.
+* **Loaded Modules (`PEB->Ldr`)**: In-memory doubly-linked lists of loaded DLLs.
 
 ::right::
 
 ### <strong class="text-emerald-400 font-bold">Network & System Objects</strong>
+* **Network Endpoints**: Active sockets, listening ports, remote C2 endpoints.
+* **Object Handle Tables**: Open files, named pipes, process tokens, sections.
+* **Synchronization Mutexes**: Named mutants used as malware infection markers.
 
-**Network Endpoints & Sockets**
-* Active TCP sockets, UDP endpoints, and protocol control blocks.
-
-**Object Handle Tables**
-* Open files, named pipes, security access tokens, and section objects.
-
-**Synchronization Mutexes**
-* Named mutant objects used as infection markers by trojans and worms.
+<!--
+Speaker Notes:
+- _EPROCESS & _ETHREAD: Give the complete execution picture—lineage, thread state, and security context.
+- VAD Trees: Every VirtualAlloc or DLL mapped into a process has a VAD node. Hunting unbacked executable memory in the VAD is primary detection.
+- PEB->Ldr: Attackers unlink DLLs from InLoadOrderModuleList to hide them from enumeration (Ldr unlinking).
+- Network: Memory captures ephemeral C2 connections that never hit disk logs.
+- Handles & Mutexes: Malware often creates a unique mutex to prevent multiple infections on the same host (e.g., 'Global\MyMalwareMutex').
+-->
 
 ---
 layout: two-cols
 title: "High-Value Memory Structures: Code & Secrets"
+kicker: Ephemeral Evidence & Credentials
 ---
 
 ### <strong class="text-amber-400 font-bold">In-Memory Code Artifacts</strong>
-
-**Injected Code Regions**
-* Unbacked executable allocations (`PAGE_EXECUTE_READWRITE`) hosting shellcode.
-
-**Execution History Traces**
-* Windows Prefetch, Shimcache, UserAssist, and MUICache preserved in RAM.
-
-**Decrypted Staging Buffers**
-* Unpacked malware binaries and payload code decrypted prior to execution.
+* **Injected Shellcode**: Unbacked executable allocations in target processes.
+* **Execution History**: Prefetch, Shimcache, UserAssist cached in RAM.
+* **Decrypted Buffers**: Unpacked payloads and staging configs in memory.
 
 ::right::
 
 ### <strong class="text-rose-400 font-bold">Plaintext Secrets & Caches</strong>
+* **Credential Material**: Passwords, Kerberos tickets, NT hashes in `lsass.exe`.
+* **Registry Hives**: SAM, SYSTEM, and SOFTWARE held in memory cache.
+* **DNS Resolver Cache**: Recent domain resolutions before DNS cache flush.
 
-**Credential Material**
-* Plaintext passwords, LSA secrets, Kerberos tickets, and NT hashes in `lsass.exe`.
-
-**In-Memory Registry Hives**
-* SAM, SYSTEM, and SOFTWARE hives held in RAM, bypassing disk-level locks.
-
-**Network Resolution Caches**
-* Local DNS resolver cache (`dnsrslvr.dll`) recording visited C2 domains.
+<!--
+Speaker Notes:
+- Unpacked Code: Modern malware is packed or encrypted on disk. Memory analysis catches it after it unpacks itself in RAM.
+- LSASS Secrets: Mimikatz and similar tools extract plaintext credentials, Kerberos TGT/TGS tickets, and NTLM hashes directly from lsass.exe process memory.
+- In-Memory Registry: In-memory registry structures can be extracted without file locking issues present on a live filesystem.
+- DNS Cache: Contains recent lookups including fast-flux or dynamic C2 domains that might have already expired from external DNS servers.
+-->
 
 ---
 layout: default
-title: Memory Page Protections & W^X
+title: "Memory Page Protections & W^X"
+kicker: Hardware-Enforced Boundaries
 ---
 
-**Page Protection Flags**
-* Memory pages enforce permissions: `READONLY`, `READWRITE`, `EXECUTE_READ`, `EXECUTE_READWRITE`.
-* The MMU hardware enforces Data Execution Prevention (**DEP** / **W^X**).
+<div class="grid grid-cols-4 gap-3 my-2 text-center text-xs font-mono">
+  <div class="p-2.5 rounded bg-slate-900/80 border border-slate-700/60">
+    <div class="font-bold text-slate-300">PAGE_READONLY</div>
+    <div class="text-[11px] text-slate-400 font-sans mt-0.5">Constants, Read Data</div>
+    <div class="mt-1 text-[10px] text-sky-400 font-bold">Legitimate (RO)</div>
+  </div>
+  <div class="p-2.5 rounded bg-slate-900/80 border border-slate-700/60">
+    <div class="font-bold text-slate-300">PAGE_READWRITE</div>
+    <div class="text-[11px] text-slate-400 font-sans mt-0.5">Stack, Heaps, Globals</div>
+    <div class="mt-1 text-[10px] text-cyan-400 font-bold">Data Only (RW)</div>
+  </div>
+  <div class="p-2.5 rounded bg-slate-900/80 border border-slate-700/60">
+    <div class="font-bold text-slate-300">PAGE_EXECUTE_READ</div>
+    <div class="text-[11px] text-slate-400 font-sans mt-0.5">Code Sections (.text)</div>
+    <div class="mt-1 text-[10px] text-emerald-400 font-bold">Legitimate Code (RX)</div>
+  </div>
+  <div class="p-2.5 rounded bg-rose-950/70 border-2 border-rose-500 shadow-md ring-2 ring-rose-500/20">
+    <div class="font-bold text-rose-200">PAGE_EXECUTE_READWRITE</div>
+    <div class="text-[11px] text-rose-300 font-sans mt-0.5">Self-Modifying / Staged</div>
+    <div class="mt-1 text-[10px] text-rose-400 font-bold uppercase tracking-wider">⚠️ Red Flag (RWX)</div>
+  </div>
+</div>
 
-**Process Injection Staging**
-* Malware allocates memory in a victim process (`VirtualAllocEx`).
-* Writes payload code (`WriteProcessMemory`).
-* Executes via `CreateRemoteThread`, `QueueUserAPC`, or Process Hollowing.
+<div class="grid grid-cols-2 gap-4 mt-3 text-xs leading-relaxed text-slate-300">
+  <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+    <strong class="text-sky-300 block mb-1 text-sm">W^X (Write XOR Execute) / DEP</strong>
+    Hardware MMU policy: Memory may be writable <em>or</em> executable, but <strong>never both</strong> simultaneously during legitimate program execution.
+  </div>
+  <div class="p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+    <strong class="text-amber-300 block mb-1 text-sm">Staging Process Injection</strong>
+    Malware allocates RWX memory in target processes via <code>VirtualAllocEx</code> to assemble payloads on the fly before jumping execution.
+  </div>
+</div>
 
-<Callout tone="warn" icon="lucide:shield-alert">
-  <strong>The RWX Red Flag:</strong> Legitimate binaries strictly separate executable code (<code>.text</code> = RX) from writable data (<code>.data</code> = RW). A memory page that is simultaneously <strong>writable AND executable (PAGE_EXECUTE_READWRITE)</strong> is a prime indicator of unpacked shellcode staging!
-</Callout>
-
----
-layout: two-cols
-title: Process & DLL Injection Mechanics
----
-
-### <strong class="text-rose-400 font-bold">Remote Thread Injection</strong>
-* **Target Acquisition**: Attacker opens victim process with `PROCESS_ALL_ACCESS` (`OpenProcess`).
-* **Memory Staging**: Allocates executable memory in target via `VirtualAllocEx(PAGE_EXECUTE_READWRITE)`.
-* **Payload Delivery**: Copies malicious shellcode or DLL path using `WriteProcessMemory`.
-* **Execution**: Invokes code in victim context via `CreateRemoteThread` or `QueueUserAPC`.
-
-::right::
-
-### <strong class="text-amber-400 font-bold">Process Hollowing (RunPE)</strong>
-* **Suspended Spawn**: Creates legitimate host process (e.g. `svchost.exe`) in suspended state (`CREATE_SUSPENDED`).
-* **Hollowing Out**: Unmaps original code section using `NtUnmapViewOfSection`.
-* **Payload Implantation**: Allocates memory at base address and writes malicious PE headers/sections.
-* **Context Hijacking**: Modifies thread register context (`SetThreadContext` for `EIP`/`RIP`) and calls `ResumeThread`.
+<CalloutCard tone="warn" icon="lucide:shield-alert" class="mt-3 text-xs">
+  <strong>The RWX Red Flag:</strong> Legitimate binaries strictly separate code (<code>.text</code> = RX) from data (<code>.data</code> = RW). A memory page that is simultaneously <strong>writable AND executable (RWX)</strong> is the primary signature of unbacked shellcode staging!
+</CalloutCard>
 
 <!--
-Reference: Endgame Technical Survey - 'Ten Process Injection Techniques: A Technical Survey of Common and Trending Process Injection Techniques':
-https://www.endgame.com/blog/technical-blog/ten-process-injection-techniques-technical-survey-common-and-trending-process
+Speaker Notes:
+- W^X Principle: Enforced by the CPU MMU via the No-Execute (NX/XD) page table bit.
+- Why RWX occurs in malware: Attackers need to write shellcode into memory, decrypt it, and immediately execute it without calling VirtualProtect to switch permissions (which creates telemetry for EDRs).
+- Legitimate exceptions: Just-In-Time (JIT) compilers (e.g. V8 in Chrome, .NET CLR) do allocate RWX memory, which forensic analysts must filter out.
+-->
+
+---
+layout: default
+title: "Process & DLL Injection Mechanics"
+kicker: Memory Manipulation Techniques
+---
+
+<ProcessInjectionFlow class="w-full" />
+
+<!--
+Speaker Notes:
+- Remote Thread Injection:
+  1. Attacker calls OpenProcess with PROCESS_ALL_ACCESS to get a handle on the victim.
+  2. VirtualAllocEx allocates a new unbacked memory region marked PAGE_EXECUTE_READWRITE.
+  3. WriteProcessMemory writes the raw shellcode or DLL path into that space.
+  4. CreateRemoteThread dispatches an execution thread pointing directly at the buffer.
+  - Forensic signature: Private committed memory with RWX protection that has NO file backing on disk (spotted by malfind).
+
+- Process Hollowing (RunPE):
+  1. Attacker spawns a trusted binary (e.g. svchost.exe) in a suspended state (CREATE_SUSPENDED).
+  2. NtUnmapViewOfSection hollows out the original legitimate executable image from memory.
+  3. VirtualAllocEx allocates replacement memory at the image base, and WriteProcessMemory writes the malicious PE headers & sections.
+  4. SetThreadContext rewrites the thread's instruction pointer (EIP/RIP) to the evil entry point, then calls ResumeThread.
+  - Forensic signature: In-memory PE header mismatch compared to on-disk image, and hollowed VAD allocations.
 -->
 
 ---
@@ -561,9 +672,9 @@ The response was this surreal kit: examiners clamped the **WiebeTech HotPlug** o
     <img src="/images/forensic-hardware-hotplug.png" alt="WiebeTech HotPlug LT & Mouse Jiggler" class="w-full max-h-[200px] object-contain rounded" />
   </div>
 
-  <Callout tone="info" icon="lucide:sparkles" class="text-xs">
+  <CalloutCard tone="info" icon="lucide:sparkles" class="text-xs">
     <strong>The 2026 Reality:</strong> Today, targets are laptops or cloud VMs, and modern standby locks TPM keys anyway. We don't drive running PCs in vans—we <strong>triage and dump RAM on-site</strong> in 90 seconds.
-  </Callout>
+  </CalloutCard>
 </div>
 
 <!--
@@ -582,6 +693,13 @@ index: 03
 kicker: Section 3
 bg: /images/monty-python-acquisition.jpg
 ---
+
+<SectionObjectives tone="emerald" :items="[
+  '<strong>Seizure Playbook</strong>: Choosing VM snapshots, live drivers, or DMA',
+  '<strong>Heisenberg Footprint</strong>: Minimizing RAM perturbation during capture',
+  '<strong>Non-Volatile Backings</strong>: Carving <code>pagefile.sys</code>, crash dumps & keys',
+  '<strong>Forensic Ethics & OpSec</strong>: Handling plaintext secrets & personal data',
+]" />
 
 ---
 layout: two-cols
@@ -721,6 +839,13 @@ index: 04
 kicker: Section 4
 bg: /images/monty-python-triage.jpg
 ---
+
+<SectionObjectives tone="sky" :items="[
+  '<strong>Toolchain Spectrum</strong>: Pioneers (Redline, DDNA) to Volatility 3 & MemProcFS',
+  '<strong>Volatility Triage</strong>: Hunting hidden processes, sockets & injected code',
+  '<strong>Anomaly Detection</strong>: Flagging lineage violations & malware mutexes',
+  '<strong>Raw Extraction</strong>: Wide strings (<code>UTF-16LE</code>) & file carving (<code>foremost</code>)',
+]" />
 
 ---
 layout: two-cols
@@ -884,10 +1009,10 @@ The de facto open-source standard for volatile memory extraction and analysis:
 * **Symbol-Driven Reconstruction**: Resolves OS structures directly from symbol tables (PDB / DWARF / JSON ISF).
 * **Comprehensive Footprint**: Decodes processes, threads, network sockets, drivers, security tokens, clipboard, registry hives, and mutexes.
 
-<Callout tone="info" icon="lucide:terminal" class="mt-6">
+<CalloutCard tone="info" icon="lucide:terminal" class="mt-6">
   <strong>Dual Toolchain Available in Lab:</strong><br/>
   Use <code>vol</code> (Volatility 2) for legacy Windows XP artifacts (e.g. raw UDP scans, <code>dnscache</code>) and <code>vol3</code> (Volatility 3) for modern 64-bit triage with automated symbol downloading.
-</Callout>
+</CalloutCard>
 
 ---
 layout: vs
@@ -1188,9 +1313,9 @@ kicker: Narrative vs. Evidence
       <li><strong>No Forensic Fantasies</strong>: Never bridge gaps in evidence with speculation. Gaps in telemetry belong in the open questions list, not the story!</li>
     </ul>
 
-<Callout tone="warn" icon="lucide:shield-alert" class="mt-4 text-xs">
+<CalloutCard tone="warn" icon="lucide:shield-alert" class="mt-4 text-xs">
   <strong>Core Forensic Principle:</strong> Be cautious—data isn't a story. Creating a hypothesis out of raw data is essential, but it must strictly follow demonstrative findings without assumptions or storytelling liberties.
-</Callout>
+</CalloutCard>
   </div>
 </div>
 
@@ -1211,6 +1336,13 @@ kicker: Section 5
 bg: /images/monty-python-opsec.jpg
 ---
 
+<SectionObjectives tone="amber" :items="[
+  '<strong>Investigation Hygiene</strong>: Isolated VMs, hashing upfront & zero VT leaks',
+  '<strong>Structured Notes</strong>: Managing triage queues, offsets & pivot leads',
+  '<strong>Data &ne; Story</strong>: Building testable attack hypotheses without speculation',
+  '<strong>AI in DFIR</strong>: Leveraging LLMs for triage while verifying hallucinations',
+]" />
+
 ---
 layout: default
 title: Operational Security (OpSec) Best Practices
@@ -1223,9 +1355,9 @@ title: Operational Security (OpSec) Best Practices
 * Always analyze extracted payloads inside an isolated, non-networked VM.
 * Use host-only virtual networking during malware reverse engineering.
 
-<Callout tone="bad" icon="lucide:alert-triangle">
+<CalloutCard tone="bad" icon="lucide:alert-triangle">
   <strong>VirusTotal Hazard:</strong> Never upload unredacted memory carvings or full dumps to VirusTotal. Attackers monitor hash submissions to detect when their implants are discovered, and raw memory dumps routinely expose plaintext credentials, active session tokens, and confidential corporate data!
-</Callout>
+</CalloutCard>
 
 ---
 layout: two-cols
@@ -1355,6 +1487,13 @@ kicker: Workshop Session
 bg: /images/monty-python-labs.jpg
 ---
 
+<SectionObjectives tone="purple" :items="[
+  '<strong>End-to-End Triage</strong>: Applying the 8-step workflow to real memory images',
+  '<strong>Threat Hunting</strong>: Detecting Zeus, Conficker & Bob compromises in RAM',
+  '<strong>Payload Carving</strong>: Dumping injected PEs, configs & writing YARA rules',
+  '<strong>Forensic Reporting</strong>: Defensible incident debriefs backed by memory proof',
+]" />
+
 ---
 layout: two-cols
 title: Lab Environment & Tooling
@@ -1443,9 +1582,9 @@ kicker: Hands-on Lab 1
 * **Target Memory Image**: `xp-infected.vmem` (Windows XP SP2/SP3 x86)
 * **Key Toolchain**: Volatility 2 (`vol`), `strings`, `rtfobj`, `yara`
 
-<Callout tone="info" icon="lucide:book-open" class="mt-3 text-xs">
+<CalloutCard tone="info" icon="lucide:book-open" class="mt-3 text-xs">
   See <code>report/report.md</code> for the complete reference forensic report!
-</Callout>
+</CalloutCard>
 
 ::right::
 
@@ -1509,9 +1648,9 @@ kicker: Post-Lab Walkthrough (Instructors / After Completion)
       <li><strong>VAD Descriptor (<code>vadinfo</code>)</strong>: Verifies <code>PAGE_EXECUTE_READWRITE</code> protection on memory page not backed by disk.</li>
     </ul>
 
-<Callout tone="good" icon="lucide:check-circle-2" class="mt-4 text-xs">
+<CalloutCard tone="good" icon="lucide:check-circle-2" class="mt-4 text-xs">
   <strong>Complete Hypothesis Proven:</strong> Every claim in the attack sequence is corroborated by at least two independent Volatility artifacts.
-</Callout>
+</CalloutCard>
   </div>
 </div>
 
@@ -1533,9 +1672,9 @@ kicker: Hands-on Lab 2
 * **Target Memory Image**: `win7_x64.vmem` (Windows 7 SP1 x64)
 * **Key Toolchain**: Volatility 2 (`vol`) or Volatility 3 (`vol3`)
 
-<Callout tone="info" icon="lucide:cpu" class="mt-3 text-xs">
+<CalloutCard tone="info" icon="lucide:cpu" class="mt-3 text-xs">
   64-bit architecture shift: 8-byte pointers, PML4 paging, and modern pool tags.
-</Callout>
+</CalloutCard>
 
 ::right::
 
@@ -1560,9 +1699,9 @@ kicker: Hands-on Lab 3
 * **Target Memory Image**: `zeus.vmem` (Zeus / Zbot Banking Trojan)
 * **Key Toolchain**: Volatility 2 (`vol`)
 
-<Callout tone="warn" icon="lucide:shield-alert" class="mt-3 text-xs">
+<CalloutCard tone="warn" icon="lucide:shield-alert" class="mt-3 text-xs">
   Zeus hollows legitimate system processes to steal online banking credentials.
-</Callout>
+</CalloutCard>
 
 ::right::
 
@@ -1590,9 +1729,9 @@ kicker: Hands-on Lab 4
 **Key Toolchain**
 * Volatility 2 (`vol`), `dlldump`, `memdump`
 
-<Callout tone="info" icon="lucide:layers" class="mt-4 text-xs">
+<CalloutCard tone="info" icon="lucide:layers" class="mt-4 text-xs">
   Multi-stage payload unpacking: Dynamic API resolving and in-memory heap configs.
-</Callout>
+</CalloutCard>
 
 ::right::
 
@@ -1617,9 +1756,9 @@ kicker: Hands-on Lab 5
 * **Target Memory Image**: `bob.vmem` (Compromised Workstation)
 * **Key Toolchain**: Volatility 2, Foremost, Strings, Oletools
 
-<Callout tone="info" icon="lucide:user-x" class="mt-3 text-xs">
+<CalloutCard tone="info" icon="lucide:user-x" class="mt-3 text-xs">
   Full attack reconstruction: From initial phishing lure to root exploit.
-</Callout>
+</CalloutCard>
 
 ::right::
 
@@ -1661,9 +1800,9 @@ title: x86_64 vs. ARM64 Memory Architecture
 | **Legacy Segmentation** | Descriptors (`GDT`/`LDT`) still present in hardware | **Completely eliminated**; pure hardware paged model |
 | **Pointer Metadata** | Strict canonical sign-extension (traps if modified) | **TBI (Top Byte Ignore)** & **PAC (Pointer Authentication)** |
 
-<Callout tone="info" icon="lucide:cpu" class="mt-3 text-xs">
+<CalloutCard tone="info" icon="lucide:cpu" class="mt-3 text-xs">
   <strong>Forensic Takeaway:</strong> Apple Silicon's 16 KB page granule and ARM Pointer Authentication (PAC) alter memory acquisition offsets, pool tags, and stack unwinding compared to standard x86_64 dumps.
-</Callout>
+</CalloutCard>
 
 ---
 layout: default
