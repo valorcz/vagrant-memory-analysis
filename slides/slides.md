@@ -435,9 +435,17 @@ kicker: OS Kernel Architecture
 
 <ProcessLinkedList class="w-full" />
 
-<CalloutCard tone="info" icon="lucide:git-commit" class="mt-2 text-xs">
-  <strong>API Traversal Dependency:</strong> Windows APIs (<code>EnumProcesses</code>, Task Manager, process listing utilities) start at <code>PsActiveProcessHead</code> and follow <code>Flink</code> pointers sequentially. If a node is missing from this chain, standard tools never see it!
-</CalloutCard>
+<!--
+Speaker Notes:
+- Circular Doubly-Linked List:
+  In the Windows NT kernel, PsActiveProcessHead serves as the circular anchor point in ntoskrnl.exe.
+  Both Flink (forward link) and Blink (backward link) loop continuously through all running processes.
+- API Traversal Dependency:
+  Standard Windows APIs (EnumProcesses, CreateToolhelp32Snapshot, Task Manager) rely solely on following Flink pointers.
+  If a process block is detached from this chain via DKOM, standard APIs traverse around it with zero errors.
+- Forensic Defense:
+  Because DKOM only modifies pointers and leaves the _EPROCESS block intact in the non-paged pool, memory forensics catches it by carving physical RAM for the 'Proc' pool tag.
+-->
 
 ---
 layout: two-cols

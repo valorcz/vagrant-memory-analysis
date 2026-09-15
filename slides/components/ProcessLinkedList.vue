@@ -393,29 +393,23 @@ const nodePositions = [
     </svg>
 
     <!-- Node Inspector & Forensic Insight Panel -->
-    <div class="w-full max-w-[920px] grid grid-cols-12 gap-2 mt-1">
+    <div class="w-full max-w-[920px] grid grid-cols-12 gap-3 mt-2">
       <!-- Col 1: Selected Object Memory Map (5 cols) -->
-      <div class="col-span-5 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--surface-bg,var(--ink-2))] flex flex-col justify-between">
-        <div class="flex items-center justify-between border-b border-[var(--line)] pb-1 mb-1.5">
-          <span class="text-[11px] font-bold text-[var(--fg)] flex items-center gap-1.5">
+      <div class="col-span-5 p-2.5 rounded-lg border border-[var(--line)] bg-[var(--surface-bg,var(--ink-2))] flex flex-col justify-center gap-1.5">
+        <div class="flex items-center justify-between border-b border-[var(--line)] pb-1">
+          <span class="text-xs font-bold text-[var(--fg)] flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full" :class="currentNode.isRootkit && mode === 'dkom' ? 'bg-rose-500' : 'bg-sky-400'"></span>
-            {{ currentNode.name }} (PID: {{ currentNode.pid }})
+            {{ currentNode.name }} <span class="text-[var(--fg-dim)] font-normal text-[11px]">({{ currentNode.isHead ? 'Kernel List Head' : `PID ${currentNode.pid}` }})</span>
           </span>
           <span class="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-[var(--line)] text-[var(--fg-dim)]">
             Offset +0x088
           </span>
         </div>
 
-        <div class="grid grid-cols-2 gap-1 text-[10px] font-mono mb-1">
-          <div><span class="text-[var(--fg-dim)]">Base:</span> {{ currentNode.baseHex }}</div>
-          <div><span class="text-[var(--fg-dim)]">CR3:</span> {{ currentNode.cr3Hex }}</div>
-          <div class="col-span-2 truncate"><span class="text-sky-400 font-bold">Flink:</span> {{ effectiveFlink }}</div>
-          <div class="col-span-2 truncate"><span class="text-purple-400 font-bold">Blink:</span> {{ effectiveBlink }}</div>
-        </div>
-
-        <!-- CONTAINING_RECORD Explanation -->
-        <div class="px-2 py-1 rounded bg-black/25 border border-[var(--line)] text-[9px] font-mono text-[var(--fg-dim)]">
-          PEPROCESS p = CONTAINING_RECORD(pLink, EPROCESS, ActiveProcessLinks);
+        <div class="grid grid-cols-2 gap-1 text-[10.5px] font-mono">
+          <div class="col-span-2"><span class="text-[var(--fg-dim)]">Base Address:</span> <span class="text-[var(--fg)]">{{ currentNode.baseHex }}</span></div>
+          <div class="col-span-2 truncate"><span class="text-sky-400 font-bold">Flink ➔</span> {{ effectiveFlink }}</div>
+          <div class="col-span-2 truncate"><span class="text-purple-400 font-bold">⬅ Blink</span> {{ effectiveBlink }}</div>
         </div>
       </div>
 
@@ -425,31 +419,21 @@ const nodePositions = [
         :class="mode === 'dkom' ? 'border-rose-500/40 bg-rose-500/10' : 'border-sky-500/30 bg-sky-500/10'"
       >
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold" :class="mode === 'dkom' ? 'text-rose-400' : 'text-sky-400'">
-            {{ mode === 'dkom' ? '★ DKOM Attack Detection Analysis' : '✓ Normal Kernel Enumeration Traversal' }}
+          <span class="text-xs font-bold" :class="mode === 'dkom' ? 'text-rose-400' : 'text-sky-400'">
+            {{ mode === 'dkom' ? '★ DKOM Rootkit Evasion' : '✓ Standard Kernel Enumeration' }}
           </span>
-          <span class="text-[9.5px] px-2 py-0.5 rounded font-mono font-bold" :class="mode === 'dkom' ? 'bg-rose-500/20 text-rose-300' : 'bg-sky-500/20 text-sky-300'">
-            {{ mode === 'dkom' ? 'vol pslist BLIND' : 'pslist RECOGNIZED' }}
+          <span class="text-[9.5px] px-2 py-0.5 rounded font-mono font-bold tracking-wide" :class="mode === 'dkom' ? 'bg-rose-500/20 text-rose-300' : 'bg-sky-500/20 text-sky-300'">
+            {{ mode === 'dkom' ? 'HIDDEN FROM OS APIS' : 'VISIBLE TO OS APIS' }}
           </span>
         </div>
 
-        <p class="text-[10.5px] text-[var(--fg)] leading-relaxed my-1">
+        <div class="text-[11px] leading-relaxed text-[var(--fg)] my-auto pt-1">
           <template v-if="mode === 'normal'">
-            Userland enumeration APIs (<code>EnumProcesses</code>, Task Manager, <code>vol pslist</code>) start at <code>PsActiveProcessHead</code> and follow <code>Flink</code> sequentially. Each <code>_EPROCESS</code> is discovered and reported.
+            OS tools follow <code>Flink</code> sequentially from <code>PsActiveProcessHead</code>. Every live <code>_EPROCESS</code> is discovered and reported.
           </template>
           <template v-else>
-            Rootkit rewrote <code>csrss.Flink = &explorer</code> and <code>explorer.Blink = &csrss</code>. Standard API traversal hops cleanly over <code>rootkit.exe</code> (PID 1337) with zero errors—Task Manager is completely blind!
+            <code>csrss.Flink</code> bridges directly to <code>explorer</code>. Task Manager is blind; discovering this process requires <strong>raw physical pool carving</strong>.
           </template>
-        </p>
-
-        <!-- Bottom Warning / Insight Bar -->
-        <div class="flex items-center justify-between text-[9.5px] pt-1 border-t" :class="mode === 'dkom' ? 'border-rose-500/20 text-rose-300' : 'border-sky-500/20 text-sky-300'">
-          <span v-if="mode === 'dkom'">
-            <strong>The Forensic Defense:</strong> <code>vol psscan</code> bypasses pointer links entirely, scanning raw physical RAM for <code>Proc</code> pool tags!
-          </span>
-          <span v-else>
-            <strong>Circular Ring:</strong> <code>explorer.exe.Flink</code> loops directly back to <code>PsActiveProcessHead</code>, terminating the walk.
-          </span>
         </div>
       </div>
     </div>
