@@ -6,15 +6,18 @@
   "scripts": {
     "dev": "slidev --open",
     "build": "slidev build",
-    "export": "slidev export"
+    "export": "slidev export",
+    "export:pptx-editable": "slidev export --format pptx-editable",
+    "export:pptx-editable:noclicks": "slidev export --format pptx-editable --with-clicks false"
   },
   "dependencies": {
-    "@slidev/cli": "^52.19.1",
+    "@slidev/cli": "^53.0.0",
     "@slidev/theme-default": "^0.25.0",
     "slidev-theme-tahta": "^0.13.3"
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.132",
-    "@iconify/vue": "^5.0.1"
+    "@iconify/vue": "^5.0.1",
+    "playwright-chromium": "^1.50.0"
   }
 }
